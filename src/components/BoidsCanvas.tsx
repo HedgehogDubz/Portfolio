@@ -15,15 +15,42 @@ interface Rectangle {
   height: number;
 }
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+// Boid density
+const BOID_DENSITY = 1; // Boids per 10,000 square pixels
+
+// Speed constants
+const MAX_SPEED = 7; // Maximum speed when going straight
+const MIN_SPEED = 2; // Minimum speed when turning sharply
+
+// Turning constants
+const ANGLE_INTERPOLATE = 0.1; // Angle interpolation factor
+
+// Behavior radii
+const COHESION_RADIUS = 10000; // Radius to look for nearby boids for cohesion
+const SEPARATION_DISTANCE = 1000; // Distance threshold for separation
+const ALIGNMENT_RADIUS = 10000; // Radius for alignment behavior
+
+// Behavior strengths
+const COHESION_STRENGTH = 0.02; // Gentle cohesion strength
+const SEPARATION_STRENGTH = 1.0; // Separation turning strength (multiplier for ANGLE_INTERPOLATE)
+const ALIGNMENT_STRENGTH = 1.0; // Alignment turning strength (multiplier for ANGLE_INTERPOLATE)
+
+// Visual constants
+const TEXT_AVOIDANCE_DISTANCE = 150; // Distance to avoid text when spawning
+const SPAWN_MARGIN = 50; // Margin from edges when spawning boids
+
+// ============================================================================
+
 const BoidsCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const boidsRef = useRef<Boid[]>([]);
   const textBoundsRef = useRef<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
   const animationFrameRef = useRef<number | null>(null);
   const nextBoidIdRef = useRef<number>(0);
-
-  // Constant boid density: boids per 10,000 square pixels
-  const BOID_DENSITY = 1; // Approximately 120 boids for a 2000x1000 canvas
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -115,16 +142,15 @@ const BoidsCanvas: React.FC = () => {
       if (difference > 0) {
         // Add exactly the number of boids needed
         const boidsToAdd = Math.round(difference);
-        const margin = 50;
 
         for (let i = 0; i < boidsToAdd; i++) {
           let x, y;
           let attempts = 0;
           do {
-            x = margin + Math.random() * (canvas.width - margin * 2);
-            y = margin + Math.random() * (canvas.height - margin * 2);
+            x = SPAWN_MARGIN + Math.random() * (canvas.width - SPAWN_MARGIN * 2);
+            y = SPAWN_MARGIN + Math.random() * (canvas.height - SPAWN_MARGIN * 2);
             attempts++;
-          } while (isNearText(x, y, 150) && attempts < 100);
+          } while (isNearText(x, y, TEXT_AVOIDANCE_DISTANCE) && attempts < 100);
 
           const angle = Math.random() * Math.PI * 2;
           boidsRef.current.push({
@@ -163,8 +189,6 @@ const BoidsCanvas: React.FC = () => {
       adjustBoidCount();
 
       const boids = boidsRef.current;
-      const constantSpeed = 5; // Fixed speed for all boids - NEVER changes
-      const angleInterpolate = 0.1;
 
       boids.forEach((boid) => {
 
@@ -223,7 +247,6 @@ const BoidsCanvas: React.FC = () => {
         let hasBoidInteraction = false;
 
         // Cohesion: Find center of mass of all boids within radius
-        const cohesionRadius = 10000; // Radius to look for nearby boids
         let centerX = 0;
         let centerY = 0;
         let nearbyCount = 0;
@@ -232,7 +255,7 @@ const BoidsCanvas: React.FC = () => {
           if (otherBoid.id === boid.id) continue;
           const { dx, dy, distanceSquared } = getTorusDistance(boid.x, boid.y, otherBoid.x, otherBoid.y);
 
-          if (distanceSquared < cohesionRadius) {
+          if (distanceSquared < COHESION_RADIUS) {
             // Use torus-wrapped position for center calculation
             centerX += boid.x + dx;
             centerY += boid.y + dy;
@@ -266,7 +289,7 @@ const BoidsCanvas: React.FC = () => {
           ctx.stroke();
 
           // Apply cohesion force (gentle steering towards center)
-          boidInteractionAngleDelta += angleDiff * 0.02; // Gentle cohesion strength
+          boidInteractionAngleDelta += angleDiff * COHESION_STRENGTH;
           hasBoidInteraction = true;
         }
 
@@ -287,7 +310,7 @@ const BoidsCanvas: React.FC = () => {
 
           if (Math.abs(posAngle) < Math.PI * 3 / 2) {
             // Check if nearest boid is close enough for separation (red line)
-            if (distanceSquared < 1000) {
+            if (distanceSquared < SEPARATION_DISTANCE) {
               // Draw line using torus-wrapped position
               const targetX = boid.x + dx;
               const targetY = boid.y + dy;
@@ -300,16 +323,16 @@ const BoidsCanvas: React.FC = () => {
               ctx.stroke();
 
               if (posAngle > 0) {
-                boidInteractionAngleDelta += -1 * angleInterpolate;
+                boidInteractionAngleDelta += -1 * ANGLE_INTERPOLATE * SEPARATION_STRENGTH;
                 hasBoidInteraction = true;
               } else if (posAngle < 0) {
-                boidInteractionAngleDelta += 1 * angleInterpolate;
+                boidInteractionAngleDelta += 1 * ANGLE_INTERPOLATE * SEPARATION_STRENGTH;
                 hasBoidInteraction = true;
               }
             }
 
             // Alignment: Match direction with nearest boid (blue line)
-            else if (distanceSquared < 10000) {
+            else if (distanceSquared < ALIGNMENT_RADIUS) {
               // Draw line using torus-wrapped position
               const targetX = boid.x + dx;
               const targetY = boid.y + dy;
@@ -328,10 +351,10 @@ const BoidsCanvas: React.FC = () => {
                 dtheta += 2 * Math.PI;
               }
               if (dtheta > 0) {
-                boidInteractionAngleDelta += angleInterpolate;
+                boidInteractionAngleDelta += ANGLE_INTERPOLATE * ALIGNMENT_STRENGTH;
                 hasBoidInteraction = true;
               } else if (dtheta < 0) {
-                boidInteractionAngleDelta += -angleInterpolate;
+                boidInteractionAngleDelta += -ANGLE_INTERPOLATE * ALIGNMENT_STRENGTH;
                 hasBoidInteraction = true;
               }
             }
@@ -342,9 +365,21 @@ const BoidsCanvas: React.FC = () => {
         if (hasBoidInteraction) {
           boid.angle += boidInteractionAngleDelta;
         }
-        // Update position with constant speed
-        boid.x += Math.cos(boid.angle) * constantSpeed;
-        boid.y += Math.sin(boid.angle) * constantSpeed;
+
+        // Calculate dynamic speed based on turning amount
+        // Boids slow down when turning, speed up when going straight
+        let currentSpeed = MAX_SPEED;
+        if (hasBoidInteraction) {
+          const angleChange = Math.abs(boidInteractionAngleDelta);
+          // Use cosine to smoothly interpolate speed based on turn angle
+          // cos(0) = 1 (full speed straight), cos(π/2) = 0 (slow when turning 90°)
+          const speedMultiplier = Math.cos(angleChange);
+          currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * speedMultiplier;
+        }
+
+        // Update position with dynamic speed
+        boid.x += Math.cos(boid.angle) * currentSpeed;
+        boid.y += Math.sin(boid.angle) * currentSpeed;
       });
 
     }
