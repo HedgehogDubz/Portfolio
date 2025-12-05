@@ -103,7 +103,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  text-align: center;
+  text-align: left;
   pointer-events: none;
   user-select: none;
   z-index: 10;
@@ -134,22 +134,24 @@
 }
 
 .header-greeting {
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 23px;
+  font-weight: 700;
   font-family: 'Courier New', 'Consolas', monospace;
   color: rgba(160, 184, 158, 0.85);
   letter-spacing: 4px;
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   text-shadow: 0 0 10px rgba(160, 184, 158, 0.3);
 }
 
 .header-name {
-  font-size: 56px;
+  font-size: 46px;
   font-weight: 700;
   font-family: 'Courier New', 'Consolas', monospace;
   color: rgba(232, 212, 160, 1);
   letter-spacing: 3px;
+  text-transform: uppercase;
+
   text-shadow:
     0 0 10px rgba(232, 212, 160, 0.6),
     0 0 20px rgba(232, 212, 160, 0.4),
