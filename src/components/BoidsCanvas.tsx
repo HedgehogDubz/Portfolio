@@ -33,6 +33,7 @@ const SPEED_SMOOTHING = 1; // How quickly speed adjusts (0-1, lower = smoother)
 
 // Turning constants
 const ANGLE_INTERPOLATE = 0.1; // Angle interpolation factor
+const MIN_TURN_THRESHOLD = 10 * (Math.PI / 180); // Minimum angle difference to trigger turning (10 degrees in radians)
 
 // Vision constants
 const LOOKING_ANGLE = Math.PI * 3 / 2; // Field of view angle for boid vision (270 degrees)
@@ -54,6 +55,40 @@ const MOUSE_ATTRACTION_RADIUS = 1005000; // Maximum distance for mouse attractio
 // Visual constants
 const TEXT_AVOIDANCE_DISTANCE = 150; // Distance to avoid text when spawning
 const SPAWN_MARGIN = 50; // Margin from edges when spawning boids
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculate the smallest angle difference between two angles, accounting for wrapping
+ * Returns the smallest of: (target - current), (target - current + 2π), (target - current - 2π)
+ */
+const getSmallestAngleDifference = (currentAngle: number, targetAngle: number): number => {
+  const a = targetAngle - currentAngle;
+  const b = targetAngle - currentAngle + 2 * Math.PI;
+  const c = targetAngle - currentAngle - 2 * Math.PI;
+
+  // Find the smallest absolute value
+  if (Math.abs(a) <= Math.abs(b) && Math.abs(a) <= Math.abs(c)) {
+    return a;
+  }
+  if (Math.abs(b) <= Math.abs(a) && Math.abs(b) <= Math.abs(c)) {
+    return b;
+  }
+  return c;
+};
+
+/**
+ * Normalize angle to [0, 2π] range
+ */
+const normalizeAngle = (angle: number): number => {
+  if (angle >= 0) {
+    return angle % (2 * Math.PI);
+  } else {
+    return (2 * Math.PI) - ((-angle) % (2 * Math.PI));
+  }
+};
 
 // ============================================================================
 
@@ -384,23 +419,14 @@ const BoidsCanvas: React.FC = () => {
           const { dx: centerDx, dy: centerDy } = getTorusDistance(boid.x, boid.y, centerX, centerY);
           const angleToCenter = Math.atan2(centerDy, centerDx);
 
-          let angleDiff = angleToCenter - boid.angle;
-          if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-          if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+          // Use improved angle difference calculation
+          const angleDiff = getSmallestAngleDifference(boid.angle, angleToCenter);
 
-          const targetX = boid.x + centerDx;
-          const targetY = boid.y + centerDy;
-
-          // ctx.beginPath();
-          // ctx.moveTo(boid.x, boid.y);
-          // ctx.lineTo(targetX, targetY);
-          // ctx.strokeStyle = 'rgba(50, 255, 50, 0.5)';
-          // ctx.lineWidth = 1;
-          // ctx.stroke();
-
-          // Apply cohesion force (gentle steering towards center)
-          boidInteractionAngleDelta += angleDiff * COHESION_STRENGTH;
-          hasBoidInteraction = true;
+          // Only apply cohesion if angle difference is significant
+          if (Math.abs(angleDiff) > MIN_TURN_THRESHOLD) {
+            boidInteractionAngleDelta += angleDiff * COHESION_STRENGTH;
+            hasBoidInteraction = true;
+          }
         }
 
         // Mouse attraction: Steer towards mouse cursor if active
@@ -415,13 +441,14 @@ const BoidsCanvas: React.FC = () => {
           if (distanceSquared < MOUSE_ATTRACTION_RADIUS) {
             const angleToMouse = Math.atan2(dy, dx);
 
-            let angleDiff = angleToMouse - boid.angle;
-            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            // Use improved angle difference calculation
+            const angleDiff = getSmallestAngleDifference(boid.angle, angleToMouse);
 
-            // Apply mouse attraction force
-            boidInteractionAngleDelta += angleDiff * MOUSE_ATTRACTION_STRENGTH;
-            hasBoidInteraction = true;
+            // Only apply mouse attraction if angle difference is significant
+            if (Math.abs(angleDiff) > MIN_TURN_THRESHOLD) {
+              boidInteractionAngleDelta += angleDiff * MOUSE_ATTRACTION_STRENGTH;
+              hasBoidInteraction = true;
+            }
           }
         }
 
@@ -431,63 +458,42 @@ const BoidsCanvas: React.FC = () => {
           const dy = nearestDy;
           const distanceSquared = nearestDistanceSquared;
 
-          let posAngle = Math.atan2(dy, dx) - boid.angle;
+          // Calculate angle to nearest boid
+          const angleToNearest = Math.atan2(dy, dx);
 
-          // Normalize posAngle to [-PI, PI]
-          if (posAngle > Math.PI) {
-            posAngle -= 2 * Math.PI;
-          } else if (posAngle < -Math.PI) {
-            posAngle += 2 * Math.PI;
-          }
+          // Use improved angle difference calculation
+          let posAngle = getSmallestAngleDifference(boid.angle, angleToNearest);
 
           if (Math.abs(posAngle) < LOOKING_ANGLE) {
             // Check if nearest boid is close enough for separation (red line)
             if (distanceSquared < SEPARATION_DISTANCE) {
-              // Draw line using torus-wrapped position
-              const targetX = boid.x + dx;
-              const targetY = boid.y + dy;
-
-              // ctx.beginPath();
-              // ctx.moveTo(boid.x, boid.y);
-              // ctx.lineTo(targetX, targetY);
-              // ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
-              // ctx.lineWidth = 4;
-              // ctx.stroke();
-
-              if (posAngle > 0) {
-                boidInteractionAngleDelta += -1 * ANGLE_INTERPOLATE * SEPARATION_STRENGTH;
-                hasBoidInteraction = true;
-              } else if (posAngle < 0) {
-                boidInteractionAngleDelta += 1 * ANGLE_INTERPOLATE * SEPARATION_STRENGTH;
-                hasBoidInteraction = true;
+              // Only turn away if angle difference is significant
+              if (Math.abs(posAngle) > MIN_TURN_THRESHOLD) {
+                // Turn away from the nearest boid
+                if (posAngle > 0) {
+                  boidInteractionAngleDelta += -ANGLE_INTERPOLATE * SEPARATION_STRENGTH;
+                  hasBoidInteraction = true;
+                } else if (posAngle < 0) {
+                  boidInteractionAngleDelta += ANGLE_INTERPOLATE * SEPARATION_STRENGTH;
+                  hasBoidInteraction = true;
+                }
               }
             }
 
             // Alignment: Match direction with nearest boid (blue line)
             else if (distanceSquared < ALIGNMENT_RADIUS) {
-              // Draw line using torus-wrapped position
-              const targetX = boid.x + dx;
-              const targetY = boid.y + dy;
+              // Use improved angle difference calculation for alignment
+              const dtheta = getSmallestAngleDifference(boid.angle, nearestBoid.angle);
 
-              // ctx.beginPath();
-              // ctx.moveTo(boid.x, boid.y);
-              // ctx.lineTo(targetX, targetY);
-              // ctx.strokeStyle = 'rgba(50, 50, 255, 0.8)';
-              // ctx.lineWidth = 2;
-              // ctx.stroke();
-
-              let dtheta = nearestBoid.angle - boid.angle;
-              if (dtheta > Math.PI) {
-                dtheta -= 2 * Math.PI;
-              } else if (dtheta < -Math.PI) {
-                dtheta += 2 * Math.PI;
-              }
-              if (dtheta > 0) {
-                boidInteractionAngleDelta += ANGLE_INTERPOLATE * ALIGNMENT_STRENGTH;
-                hasBoidInteraction = true;
-              } else if (dtheta < 0) {
-                boidInteractionAngleDelta += -ANGLE_INTERPOLATE * ALIGNMENT_STRENGTH;
-                hasBoidInteraction = true;
+              // Only align if angle difference is significant
+              if (Math.abs(dtheta) > MIN_TURN_THRESHOLD) {
+                if (dtheta > 0) {
+                  boidInteractionAngleDelta += ANGLE_INTERPOLATE * ALIGNMENT_STRENGTH;
+                  hasBoidInteraction = true;
+                } else if (dtheta < 0) {
+                  boidInteractionAngleDelta += -ANGLE_INTERPOLATE * ALIGNMENT_STRENGTH;
+                  hasBoidInteraction = true;
+                }
               }
             }
           }
@@ -496,6 +502,8 @@ const BoidsCanvas: React.FC = () => {
         // Apply boid interaction forces (no wall avoidance in torus mode)
         if (hasBoidInteraction) {
           boid.angle += boidInteractionAngleDelta;
+          // Normalize angle to [0, 2π] range
+          boid.angle = normalizeAngle(boid.angle);
         }
 
         // Update turning history with current angle delta
