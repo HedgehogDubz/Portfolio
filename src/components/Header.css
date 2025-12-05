@@ -5,15 +5,13 @@
   width: 100%;
   padding: 1rem 2rem;
   z-index: 100;
-  background: rgba(15, 10, 15, 0.8);
+  background: rgba(15, 14, 13, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 100, 100, 0.2);
+  border-bottom: 1px solid rgba(232, 212, 160, 0.15);
   box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.3),
-    0 0 40px rgba(255, 50, 50, 0.1),
-    0 0 50px rgba(50, 255, 50, 0.08),
-    0 0 60px rgba(50, 50, 255, 0.08);
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(232, 212, 160, 0.05);
   pointer-events: none;
 }
 
@@ -31,8 +29,8 @@
 }
 
 .hedgehog-button {
-  background: rgba(30, 20, 30, 0.6);
-  border: 2px solid rgba(255, 100, 100, 0.4);
+  background: rgba(26, 24, 22, 0.7);
+  border: 2px solid rgba(232, 212, 160, 0.3);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -43,26 +41,26 @@
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   box-shadow:
-    0 0 20px rgba(255, 50, 50, 0.2),
-    0 0 30px rgba(50, 255, 50, 0.15),
-    0 0 40px rgba(50, 50, 255, 0.1);
+    0 0 20px rgba(232, 212, 160, 0.1),
+    0 0 0 1px rgba(232, 212, 160, 0.05) inset;
   flex-shrink: 0;
 }
 
 .hedgehog-button:hover {
-  background: rgba(40, 30, 40, 0.8);
-  border-color: rgba(255, 100, 100, 0.6);
+  background: rgba(35, 32, 28, 0.85);
+  border-color: rgba(232, 212, 160, 0.5);
   transform: scale(1.05);
   box-shadow:
-    0 0 30px rgba(255, 50, 50, 0.4),
-    0 0 40px rgba(50, 255, 50, 0.3),
-    0 0 50px rgba(50, 50, 255, 0.2);
+    0 0 30px rgba(232, 212, 160, 0.2),
+    0 0 0 1px rgba(232, 212, 160, 0.1) inset;
 }
 
 .hedgehog-icon {
   width: 30px;
   height: 30px;
   transition: transform 0.6s ease;
+  display: block;
+  object-fit: contain;
 }
 
 .hedgehog-button:hover .hedgehog-icon {
@@ -78,7 +76,7 @@
   }
 }
 
-/* Navigation Links */
+/* Navigation Links - Retro CRT Aesthetic */
 .header-nav {
   display: flex;
   align-items: center;
@@ -90,15 +88,14 @@
   border: none;
   font-size: 16px;
   font-weight: 500;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  background: linear-gradient(90deg, rgba(255, 150, 150, 0.95), rgba(150, 255, 150, 0.95), rgba(150, 150, 255, 0.95));
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+  font-family: 'Courier New', 'Consolas', monospace;
+  color: rgba(232, 212, 160, 0.9);
   cursor: pointer;
   transition: all 0.3s ease;
   padding: 0.5rem 1rem;
   position: relative;
+  text-shadow: 0 0 8px rgba(232, 212, 160, 0.3);
+  letter-spacing: 0.5px;
 }
 
 .nav-link::after {
@@ -108,8 +105,9 @@
   left: 50%;
   transform: translateX(-50%);
   width: 0;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(255, 100, 100, 1), rgba(100, 255, 100, 1), rgba(100, 100, 255, 1));
+  height: 1px;
+  background: rgba(232, 212, 160, 0.6);
+  box-shadow: 0 0 8px rgba(232, 212, 160, 0.4);
   transition: width 0.3s ease;
 }
 
@@ -118,11 +116,10 @@
 }
 
 .nav-link:hover {
-  filter: brightness(1.3);
+  color: rgba(232, 212, 160, 1);
   text-shadow:
-    0 0 20px rgba(255, 100, 100, 0.5),
-    0 0 30px rgba(100, 255, 100, 0.3),
-    0 0 40px rgba(100, 100, 255, 0.3);
+    0 0 12px rgba(232, 212, 160, 0.6),
+    0 0 20px rgba(232, 212, 160, 0.3);
 }
 
 /* Responsive */

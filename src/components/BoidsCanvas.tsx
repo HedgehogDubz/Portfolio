@@ -26,23 +26,30 @@ interface Rectangle {
 const BOID_DENSITY = 1; // Boids per 10,000 square pixels
 
 // Speed constants
-const MAX_SPEED = 5; // Maximum speed when going straight
-const MIN_SPEED = 1; // Minimum speed when turning sharply
-const TURNING_HISTORY_LENGTH = 10; // Number of frames to track for turning consistency
+const MAX_SPEED = 8; // Maximum speed when going straight
+const MIN_SPEED = 8; // Minimum speed when turning sharply
+const TURNING_HISTORY_LENGTH = 7; // Number of frames to track for turning consistency
 const SPEED_SMOOTHING = 1; // How quickly speed adjusts (0-1, lower = smoother)
 
 // Turning constants
 const ANGLE_INTERPOLATE = 0.1; // Angle interpolation factor
 
+// Vision constants
+const LOOKING_ANGLE = Math.PI * 3 / 2; // Field of view angle for boid vision (270 degrees)
+
 // Behavior radii
-const COHESION_RADIUS = 10000; // Radius to look for nearby boids for cohesion
-const SEPARATION_DISTANCE = 1000; // Distance threshold for separation
-const ALIGNMENT_RADIUS = 10000; // Radius for alignment behavior
+const COHESION_RADIUS = 30000; // Radius to look for nearby boids for cohesion
+const SEPARATION_DISTANCE = 800; // Distance threshold for separation
+const ALIGNMENT_RADIUS = 30000; // Radius for alignment behavior
 
 // Behavior strengths
 const COHESION_STRENGTH = 0.02; // Gentle cohesion strength
 const SEPARATION_STRENGTH = 1.0; // Separation turning strength (multiplier for ANGLE_INTERPOLATE)
-const ALIGNMENT_STRENGTH = 1.0; // Alignment turning strength (multiplier for ANGLE_INTERPOLATE)
+const ALIGNMENT_STRENGTH = 1.5; // Alignment turning strength (multiplier for ANGLE_INTERPOLATE)
+
+// Mouse attraction constants
+const MOUSE_ATTRACTION_STRENGTH = 0.035; // Strength of mouse attraction force
+const MOUSE_ATTRACTION_RADIUS = 1005000; // Maximum distance for mouse attraction
 
 // Visual constants
 const TEXT_AVOIDANCE_DISTANCE = 150; // Distance to avoid text when spawning
@@ -62,6 +69,10 @@ const BoidsCanvas: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
 
+  // Mouse tracking state
+  const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
+  const isMouseActiveRef = useRef<boolean>(false);
+
   // Sync isPaused state with ref so animation loop can access current value
   useEffect(() => {
     isPausedRef.current = isPaused;
@@ -75,6 +86,92 @@ const BoidsCanvas: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Mouse tracking for boid attraction
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Helper function to check if mouse is in an exclusion zone
+    const isInExclusionZone = (x: number, y: number): boolean => {
+      // Get header bounds (top navigation bar)
+      const header = document.querySelector('.header');
+      if (header) {
+        const headerRect = header.getBoundingClientRect();
+        if (x >= headerRect.left && x <= headerRect.right &&
+            y >= headerRect.top && y <= headerRect.bottom) {
+          return true;
+        }
+      }
+
+      // Get center text card bounds (glassmorphism card)
+      const textCard = document.querySelector('.header-text');
+      if (textCard) {
+        const textRect = textCard.getBoundingClientRect();
+        if (x >= textRect.left && x <= textRect.right &&
+            y >= textRect.top && y <= textRect.bottom) {
+          return true;
+        }
+      }
+
+      // Get attribution link bounds
+      const attribution = document.querySelector('.attribution-link');
+      if (attribution) {
+        const attrRect = attribution.getBoundingClientRect();
+        if (x >= attrRect.left && x <= attrRect.right &&
+            y >= attrRect.top && y <= attrRect.bottom) {
+          return true;
+        }
+      }
+
+      // Get scroll indicator bounds
+      const scrollIndicator = document.querySelector('.scroll-indicator');
+      if (scrollIndicator) {
+        const scrollRect = scrollIndicator.getBoundingClientRect();
+        if (x >= scrollRect.left && x <= scrollRect.right &&
+            y >= scrollRect.top && y <= scrollRect.bottom) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Don't track mouse if canvas is faded out
+      if (isFadedOut) {
+        isMouseActiveRef.current = false;
+        mousePositionRef.current = null;
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Check if mouse is in an exclusion zone
+      if (isInExclusionZone(e.clientX, e.clientY)) {
+        isMouseActiveRef.current = false;
+        mousePositionRef.current = null;
+      } else {
+        isMouseActiveRef.current = true;
+        mousePositionRef.current = { x, y };
+      }
+    };
+
+    const handleMouseLeave = () => {
+      isMouseActiveRef.current = false;
+      mousePositionRef.current = null;
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [isFadedOut]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -294,16 +391,38 @@ const BoidsCanvas: React.FC = () => {
           const targetX = boid.x + centerDx;
           const targetY = boid.y + centerDy;
 
-          ctx.beginPath();
-          ctx.moveTo(boid.x, boid.y);
-          ctx.lineTo(targetX, targetY);
-          ctx.strokeStyle = 'rgba(50, 255, 50, 0.5)';
-          ctx.lineWidth = 1;
-          ctx.stroke();
+          // ctx.beginPath();
+          // ctx.moveTo(boid.x, boid.y);
+          // ctx.lineTo(targetX, targetY);
+          // ctx.strokeStyle = 'rgba(50, 255, 50, 0.5)';
+          // ctx.lineWidth = 1;
+          // ctx.stroke();
 
           // Apply cohesion force (gentle steering towards center)
           boidInteractionAngleDelta += angleDiff * COHESION_STRENGTH;
           hasBoidInteraction = true;
+        }
+
+        // Mouse attraction: Steer towards mouse cursor if active
+        if (isMouseActiveRef.current && mousePositionRef.current) {
+          const mouseX = mousePositionRef.current.x;
+          const mouseY = mousePositionRef.current.y;
+
+          // Calculate distance to mouse using torus wrapping for consistency
+          const { dx, dy, distanceSquared } = getTorusDistance(boid.x, boid.y, mouseX, mouseY);
+
+          // Only attract if within radius
+          if (distanceSquared < MOUSE_ATTRACTION_RADIUS) {
+            const angleToMouse = Math.atan2(dy, dx);
+
+            let angleDiff = angleToMouse - boid.angle;
+            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+            // Apply mouse attraction force
+            boidInteractionAngleDelta += angleDiff * MOUSE_ATTRACTION_STRENGTH;
+            hasBoidInteraction = true;
+          }
         }
 
         // Separation: Move away from nearest boid if too close
@@ -321,19 +440,19 @@ const BoidsCanvas: React.FC = () => {
             posAngle += 2 * Math.PI;
           }
 
-          if (Math.abs(posAngle) < Math.PI * 3 / 2) {
+          if (Math.abs(posAngle) < LOOKING_ANGLE) {
             // Check if nearest boid is close enough for separation (red line)
             if (distanceSquared < SEPARATION_DISTANCE) {
               // Draw line using torus-wrapped position
               const targetX = boid.x + dx;
               const targetY = boid.y + dy;
 
-              ctx.beginPath();
-              ctx.moveTo(boid.x, boid.y);
-              ctx.lineTo(targetX, targetY);
-              ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
-              ctx.lineWidth = 4;
-              ctx.stroke();
+              // ctx.beginPath();
+              // ctx.moveTo(boid.x, boid.y);
+              // ctx.lineTo(targetX, targetY);
+              // ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
+              // ctx.lineWidth = 4;
+              // ctx.stroke();
 
               if (posAngle > 0) {
                 boidInteractionAngleDelta += -1 * ANGLE_INTERPOLATE * SEPARATION_STRENGTH;
@@ -350,12 +469,12 @@ const BoidsCanvas: React.FC = () => {
               const targetX = boid.x + dx;
               const targetY = boid.y + dy;
 
-              ctx.beginPath();
-              ctx.moveTo(boid.x, boid.y);
-              ctx.lineTo(targetX, targetY);
-              ctx.strokeStyle = 'rgba(50, 50, 255, 0.8)';
-              ctx.lineWidth = 2;
-              ctx.stroke();
+              // ctx.beginPath();
+              // ctx.moveTo(boid.x, boid.y);
+              // ctx.lineTo(targetX, targetY);
+              // ctx.strokeStyle = 'rgba(50, 50, 255, 0.8)';
+              // ctx.lineWidth = 2;
+              // ctx.stroke();
 
               let dtheta = nearestBoid.angle - boid.angle;
               if (dtheta > Math.PI) {
@@ -415,32 +534,9 @@ const BoidsCanvas: React.FC = () => {
 
     }
 
-    // Helper function to convert HSL to RGB
-    const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
-      let r, g, b;
-      if (s === 0) {
-        r = g = b = l;
-      } else {
-        const hue2rgb = (p: number, q: number, t: number) => {
-          if (t < 0) t += 1;
-          if (t > 1) t -= 1;
-          if (t < 1/6) return p + (q - p) * 6 * t;
-          if (t < 1/2) return q;
-          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-          return p;
-        };
-        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
-      }
-      return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-    };
-
     // Draw function
     const draw = () => {
-      ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
+      ctx.fillStyle = 'rgba(15, 14, 13, 0.3)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       boidsRef.current.forEach((boid, index) => {
@@ -454,15 +550,29 @@ const BoidsCanvas: React.FC = () => {
         ctx.lineTo(-14, -10);
         ctx.closePath();
 
-        // Cycle through RGB colors based on boid index
-        const hue = (index * 137.5) % 360; // Golden angle for nice distribution
-        const rgb = hslToRgb(hue / 360, 0.8, 0.6);
-        ctx.fillStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.8)`;
-        ctx.fill();
-        const rgbStroke = hslToRgb(hue / 360, 0.9, 0.7);
-        ctx.strokeStyle = `rgba(${rgbStroke[0]}, ${rgbStroke[1]}, ${rgbStroke[2]}, 0.9)`;
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        // Alternate between amber and green phosphor colors for retro CRT aesthetic
+        const isAmber = index % 2 === 0;
+
+        if (isAmber) {
+          // Amber phosphor with subtle glow
+          ctx.shadowBlur = 6;
+          ctx.fillStyle = 'rgba(232, 212, 160, 0.7)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(232, 212, 160, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else {
+          // Green phosphor with subtle glow
+          ctx.shadowBlur = 6;
+          ctx.fillStyle = 'rgba(160, 184, 158, 0.65)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(160, 184, 158, 0.85)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // Reset shadow for next boid
+        ctx.shadowBlur = 0;
 
         ctx.restore();
       });
@@ -557,9 +667,17 @@ const BoidsCanvas: React.FC = () => {
 
         {/* Scroll indicator at bottom center */}
         <div className={`scroll-indicator ${isFadedOut || !showScrollIndicator ? 'hidden' : ''}`}>
-          <div className="scroll-indicator-content">
-            <div className="scroll-arrow">↓</div>
-            <div className="scroll-text">Scroll</div>
+          <div className="scroll-indicator-capsule">
+            <div className="chevron-arrow chevron-1">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className="chevron-arrow chevron-2">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
