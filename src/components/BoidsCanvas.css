@@ -1,9 +1,20 @@
 .boids-container {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   background: linear-gradient(135deg, #0a0a1e 0%, #1a1a3e 50%, #0a0a1e 100%);
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: auto;
+}
+
+.boids-container.faded-out {
+  opacity: 0;
+  pointer-events: none; /* Allow clicks through when faded */
 }
 
 .boids-canvas {
@@ -14,6 +25,7 @@
   height: 100%;
 }
 
+/* Large center background text - subtle and decorative */
 .name-text {
   position: absolute;
   top: 50%;
@@ -21,34 +33,513 @@
   transform: translate(-50%, -50%);
   font-size: 120px;
   font-weight: bold;
-  font-family: Arial, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   color: transparent;
   background: linear-gradient(
     45deg,
-    rgba(100, 200, 255, 0.3),
-    rgba(150, 100, 255, 0.3),
-    rgba(255, 100, 200, 0.3)
+    rgba(100, 200, 255, 0.15),
+    rgba(150, 100, 255, 0.15),
+    rgba(255, 100, 200, 0.15)
   );
   background-clip: text;
   -webkit-background-clip: text;
-  text-shadow: 
-    0 0 20px rgba(100, 200, 255, 0.5),
-    0 0 40px rgba(100, 200, 255, 0.3),
+  text-shadow:
+    0 0 30px rgba(100, 200, 255, 0.3),
     0 0 60px rgba(100, 200, 255, 0.2);
   pointer-events: none;
   user-select: none;
   white-space: nowrap;
+  opacity: 0.6;
+  letter-spacing: 8px;
 }
 
 @media (max-width: 768px) {
   .name-text {
     font-size: 60px;
+    letter-spacing: 4px;
   }
 }
 
 @media (max-width: 480px) {
   .name-text {
     font-size: 40px;
+    letter-spacing: 2px;
   }
 }
 
+/* Header text at center - glassmorphism card */
+.header-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
+
+  /* Glassmorphism effect */
+  background: rgba(15, 15, 40, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(100, 200, 255, 0.2);
+  border-radius: 24px;
+  padding: 32px 64px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 60px rgba(100, 200, 255, 0.15);
+
+  /* Subtle animation */
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-10px);
+  }
+}
+
+.header-greeting {
+  font-size: 16px;
+  font-weight: 400;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color: rgba(150, 200, 255, 0.85);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px rgba(100, 200, 255, 0.3);
+}
+
+.header-name {
+  font-size: 56px;
+  font-weight: 700;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(150, 200, 255, 1) 50%,
+    rgba(100, 150, 255, 1) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  letter-spacing: 2px;
+  text-shadow:
+    0 4px 20px rgba(100, 200, 255, 0.5),
+    0 8px 40px rgba(100, 200, 255, 0.3);
+  filter: drop-shadow(0 4px 20px rgba(100, 200, 255, 0.4));
+}
+
+/* Attribution link at bottom left - glassmorphism pill */
+.attribution-link {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  font-size: 13px;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color: rgba(200, 220, 255, 0.85);
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  cursor: pointer;
+
+  /* Glassmorphism pill */
+  background: rgba(15, 15, 40, 0.6);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(100, 200, 255, 0.15);
+  border-radius: 50px;
+  padding: 12px 24px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attribution-link::before {
+  content: "ℹ";
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.attribution-link:hover {
+  color: rgba(255, 255, 255, 1);
+  background: rgba(30, 30, 60, 0.8);
+  border-color: rgba(100, 200, 255, 0.4);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 0 40px rgba(100, 200, 255, 0.3);
+  transform: translateY(-2px);
+  text-shadow: 0 0 20px rgba(100, 200, 255, 0.6);
+}
+
+.attribution-link:active {
+  transform: translateY(0px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .header-text {
+    padding: 28px 48px;
+  }
+
+  .header-greeting {
+    font-size: 14px;
+    letter-spacing: 3px;
+  }
+
+  .header-name {
+    font-size: 44px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-text {
+    padding: 24px 40px;
+    border-radius: 20px;
+  }
+
+  .header-greeting {
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .header-name {
+    font-size: 36px;
+    letter-spacing: 1px;
+  }
+
+  .attribution-link {
+    font-size: 11px;
+    bottom: 20px;
+    left: 20px;
+    padding: 10px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-text {
+    padding: 20px 32px;
+    border-radius: 16px;
+  }
+
+  .header-greeting {
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .header-name {
+    font-size: 28px;
+    letter-spacing: 0.5px;
+  }
+
+  .attribution-link {
+    font-size: 10px;
+    bottom: 15px;
+    left: 15px;
+    padding: 8px 16px;
+  }
+
+  .attribution-link::before {
+    font-size: 12px;
+  }
+}
+
+/* Portfolio content behind the boids canvas */
+.portfolio-content {
+  position: relative;
+  margin-top: 0; /* Start at the same position as canvas */
+  min-height: 100vh;
+  padding-top: 100vh; /* Add padding to push content down */
+  background: linear-gradient(180deg, #0a0a1e 0%, #1a1a3e 50%, #2a2a4e 100%);
+  z-index: 1;
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-bottom: 80px;
+}
+
+.portfolio-section {
+  max-width: 1200px;
+  margin: 0 auto 120px auto;
+  padding: 60px;
+  background: rgba(20, 20, 50, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(100, 200, 255, 0.15);
+  border-radius: 20px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.portfolio-section h2 {
+  font-size: 48px;
+  font-weight: 700;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(150, 200, 255, 1) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 24px;
+  text-shadow: 0 4px 20px rgba(100, 200, 255, 0.3);
+}
+
+.portfolio-section p {
+  font-size: 18px;
+  line-height: 1.8;
+  color: rgba(200, 220, 255, 0.85);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+@media (max-width: 768px) {
+  .portfolio-content {
+    padding: 60px 20px;
+  }
+
+  .portfolio-section {
+    padding: 40px 30px;
+    margin-bottom: 80px;
+  }
+
+  .portfolio-section h2 {
+    font-size: 36px;
+  }
+
+  .portfolio-section p {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-content {
+    padding: 40px 15px;
+  }
+
+  .portfolio-section {
+    padding: 30px 20px;
+    margin-bottom: 60px;
+  }
+
+  .portfolio-section h2 {
+    font-size: 28px;
+  }
+
+  .portfolio-section p {
+    font-size: 14px;
+  }
+}
+
+/* Scroll indicator at bottom center */
+.scroll-indicator {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.4s ease-out;
+}
+
+.scroll-indicator.hidden {
+  opacity: 0;
+}
+
+.scroll-indicator-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+
+  /* Glassmorphism styling */
+  background: rgba(15, 15, 40, 0.7);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(100, 200, 255, 0.3);
+  border-radius: 24px;
+  padding: 20px 32px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 0 20px rgba(100, 200, 255, 0.1);
+}
+
+/* Scroll arrow */
+.scroll-arrow {
+  font-size: 36px;
+  color: rgba(150, 220, 255, 1);
+  animation: bounce 2s ease-in-out infinite;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.6));
+}
+
+/* Scroll text */
+.scroll-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(200, 220, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Responsive scroll indicator */
+@media (max-width: 768px) {
+  .scroll-indicator {
+    bottom: 30px;
+  }
+
+  .scroll-indicator-content {
+    padding: 16px 24px;
+    gap: 6px;
+  }
+
+  .scroll-arrow {
+    font-size: 30px;
+  }
+
+  .scroll-text {
+    font-size: 14px;
+    letter-spacing: 1.5px;
+  }
+}
+
+/* Pull-down indicator at top (for returning to boids canvas) */
+.pulldown-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+  animation: elasticDropDown 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes elasticDropDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.pulldown-indicator-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+
+  /* Glassmorphism styling */
+  background: rgba(15, 15, 40, 0.7);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(100, 200, 255, 0.3);
+  border-radius: 0 0 24px 24px;
+  padding: 16px 32px 20px 32px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 0 20px rgba(100, 200, 255, 0.1);
+}
+
+/* Inverted semicircle progress indicator */
+.pulldown-progress-semicircle {
+  width: 90px;
+  height: 60px;
+  overflow: visible;
+}
+
+.pulldown-progress-semicircle path {
+  transition: stroke-dashoffset 0.1s linear;
+  filter: drop-shadow(0 0 4px rgba(100, 200, 255, 0.4));
+}
+
+/* Elastic depletion animation when user stops scrolling */
+.pulldown-progress-semicircle path.depleting {
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Arrow inside inverted semicircle */
+.pulldown-progress-semicircle .svg-arrow-pulldown {
+  animation: bounceUp 2s ease-in-out infinite;
+}
+
+@keyframes bounceUp {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Pull-down text */
+.pulldown-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(200, 220, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Responsive pull-down indicator */
+@media (max-width: 768px) {
+  .pulldown-indicator-content {
+    padding: 12px 24px 16px 24px;
+    gap: 6px;
+  }
+
+  .pulldown-progress-semicircle {
+    width: 75px;
+    height: 50px;
+  }
+
+  .pulldown-progress-semicircle .svg-arrow-pulldown {
+    font-size: 20px;
+  }
+
+  .pulldown-text {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+}

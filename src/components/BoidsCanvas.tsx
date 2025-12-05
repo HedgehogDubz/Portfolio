@@ -1,11 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './BoidsCanvas.css';
+import Header from './Header';
 
 interface Boid {
   id: number;
   x: number;
   y: number;
   angle: number;
+  turningHistory: number[]; 
+  currentSpeed: number; 
 }
 
 interface Rectangle {
@@ -23,8 +26,10 @@ interface Rectangle {
 const BOID_DENSITY = 1; // Boids per 10,000 square pixels
 
 // Speed constants
-const MAX_SPEED = 7; // Maximum speed when going straight
-const MIN_SPEED = 2; // Minimum speed when turning sharply
+const MAX_SPEED = 5; // Maximum speed when going straight
+const MIN_SPEED = 1; // Minimum speed when turning sharply
+const TURNING_HISTORY_LENGTH = 10; // Number of frames to track for turning consistency
+const SPEED_SMOOTHING = 1; // How quickly speed adjusts (0-1, lower = smoother)
 
 // Turning constants
 const ANGLE_INTERPOLATE = 0.1; // Angle interpolation factor
@@ -51,6 +56,15 @@ const BoidsCanvas: React.FC = () => {
   const textBoundsRef = useRef<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
   const animationFrameRef = useRef<number | null>(null);
   const nextBoidIdRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isPausedRef = useRef<boolean>(false); // Use ref to avoid re-running animation effect
+  const [isFadedOut, setIsFadedOut] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Sync isPaused state with ref so animation loop can access current value
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -59,12 +73,10 @@ const BoidsCanvas: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       createTextBounds();
-      // Adjust boid count when canvas size changes
       if (boidsRef.current.length > 0) {
         adjustBoidCount();
       }
@@ -78,16 +90,13 @@ const BoidsCanvas: React.FC = () => {
       const tempCtx = tempCanvas.getContext('2d');
       if (!tempCtx) return;
 
-      // Measure text dimensions
       tempCtx.font = 'bold 120px Arial';
       const textMetrics = tempCtx.measureText('TRISTAN WINATA');
       const textWidth = textMetrics.width;
       const textHeight = 120; // Font size
 
-      // Add smaller padding for more form-fitting rectangle
       const padding = 30; // Reduced from 80 to 30
 
-      // Calculate bounding box centered on canvas
       textBoundsRef.current = {
         x: canvas.width / 2 - textWidth / 2 - padding,
         y: canvas.height / 2 - textHeight / 2 - padding,
@@ -96,18 +105,16 @@ const BoidsCanvas: React.FC = () => {
       };
     };
 
-    // Calculate target number of boids based on canvas area
     const getTargetBoidCount = () => {
       const area = canvas.width * canvas.height;
       return Math.round((area / 10000) * BOID_DENSITY);
     };
 
-    // Initialize boids with density-based count
     const initBoids = () => {
       boidsRef.current = [];
       nextBoidIdRef.current = 0;
       const targetCount = getTargetBoidCount();
-      const margin = 50; // Keep boids away from edges initially
+      const margin = 50; 
 
       for (let i = 0; i < targetCount; i++) {
         let x, y;
@@ -124,6 +131,8 @@ const BoidsCanvas: React.FC = () => {
           x,
           y,
           angle,
+          turningHistory: [],
+          currentSpeed: MAX_SPEED,
         });
       }
     };
@@ -134,13 +143,11 @@ const BoidsCanvas: React.FC = () => {
       const currentCount = boidsRef.current.length;
       const difference = targetCount - currentCount;
 
-      // Only adjust if difference is at least 1 boid (meaningful threshold)
       if (Math.abs(difference) < 1) {
-        return; // No adjustment needed
+        return; 
       }
 
       if (difference > 0) {
-        // Add exactly the number of boids needed
         const boidsToAdd = Math.round(difference);
 
         for (let i = 0; i < boidsToAdd; i++) {
@@ -158,10 +165,11 @@ const BoidsCanvas: React.FC = () => {
             x,
             y,
             angle,
+            turningHistory: [],
+            currentSpeed: MAX_SPEED,
           });
         }
       } else if (difference < 0) {
-        // Remove exactly the number of excess boids from the end
         const boidsToRemove = Math.round(Math.abs(difference));
         boidsRef.current.splice(-boidsToRemove, boidsToRemove);
       }
@@ -171,13 +179,11 @@ const BoidsCanvas: React.FC = () => {
     const isNearText = (x: number, y: number, distance: number): boolean => {
       const bounds = textBoundsRef.current;
 
-      // Expand the rectangle by the distance parameter
       const expandedX = bounds.x - distance;
       const expandedY = bounds.y - distance;
       const expandedWidth = bounds.width + distance * 2;
       const expandedHeight = bounds.height + distance * 2;
 
-      // Check if point is inside expanded rectangle
       return x >= expandedX &&
         x <= expandedX + expandedWidth &&
         y >= expandedY &&
@@ -185,7 +191,11 @@ const BoidsCanvas: React.FC = () => {
     };
 
     const updateBoids = () => {
-      // Adjust boid count to maintain constant density
+      // Skip animation if paused (scrolled out of view)
+      if (isPausedRef.current) {
+        return;
+      }
+
       adjustBoidCount();
 
       const boids = boidsRef.current;
@@ -211,12 +221,10 @@ const BoidsCanvas: React.FC = () => {
           let dx = x2 - x1;
           let dy = y2 - y1;
 
-          // Wrap around horizontally
           if (Math.abs(dx) > canvas.width / 2) {
             dx = dx > 0 ? dx - canvas.width : dx + canvas.width;
           }
 
-          // Wrap around vertically
           if (Math.abs(dy) > canvas.height / 2) {
             dy = dy > 0 ? dy - canvas.height : dy + canvas.height;
           }
@@ -242,7 +250,6 @@ const BoidsCanvas: React.FC = () => {
           }
         }
 
-        // Calculate boid interaction forces
         let boidInteractionAngleDelta = 0;
         let hasBoidInteraction = false;
 
@@ -256,7 +263,6 @@ const BoidsCanvas: React.FC = () => {
           const { dx, dy, distanceSquared } = getTorusDistance(boid.x, boid.y, otherBoid.x, otherBoid.y);
 
           if (distanceSquared < COHESION_RADIUS) {
-            // Use torus-wrapped position for center calculation
             centerX += boid.x + dx;
             centerY += boid.y + dy;
             nearbyCount++;
@@ -268,16 +274,13 @@ const BoidsCanvas: React.FC = () => {
           centerX /= nearbyCount;
           centerY /= nearbyCount;
 
-          // Calculate direction to center of mass
           const { dx: centerDx, dy: centerDy } = getTorusDistance(boid.x, boid.y, centerX, centerY);
           const angleToCenter = Math.atan2(centerDy, centerDx);
 
-          // Calculate angle difference
           let angleDiff = angleToCenter - boid.angle;
           if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
           if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-          // Draw green line to center of mass
           const targetX = boid.x + centerDx;
           const targetY = boid.y + centerDy;
 
@@ -366,20 +369,38 @@ const BoidsCanvas: React.FC = () => {
           boid.angle += boidInteractionAngleDelta;
         }
 
-        // Calculate dynamic speed based on turning amount
-        // Boids slow down when turning, speed up when going straight
-        let currentSpeed = MAX_SPEED;
-        if (hasBoidInteraction) {
-          const angleChange = Math.abs(boidInteractionAngleDelta);
-          // Use cosine to smoothly interpolate speed based on turn angle
-          // cos(0) = 1 (full speed straight), cos(π/2) = 0 (slow when turning 90°)
-          const speedMultiplier = Math.cos(angleChange);
-          currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * speedMultiplier;
+        // Update turning history with current angle delta
+        boid.turningHistory.push(boidInteractionAngleDelta);
+        if (boid.turningHistory.length > TURNING_HISTORY_LENGTH) {
+          boid.turningHistory.shift(); // Remove oldest entry
         }
 
-        // Update position with dynamic speed
-        boid.x += Math.cos(boid.angle) * currentSpeed;
-        boid.y += Math.sin(boid.angle) * currentSpeed;
+        // Calculate turning consistency to determine speed
+        // Sustained turning in one direction = slow down
+        // Straight or alternating = speed up
+        let targetSpeed = MAX_SPEED;
+
+        if (boid.turningHistory.length >= 3) {
+          // Calculate turning consistency
+          const recentTurns = boid.turningHistory.slice(-TURNING_HISTORY_LENGTH); // Look at last 5 frames
+          const absTurns = recentTurns.map(t => Math.abs(t));
+          const avgAbsTurn = absTurns.reduce((sum, turn) => sum + turn, 0) / absTurns.length;
+
+          // Check if turning is sustained (same direction)
+          const allSameSign = recentTurns.every(t => t >= 0) || recentTurns.every(t => t <= 0);
+
+          if (allSameSign && avgAbsTurn > 0.02) {
+            const turnIntensity = Math.min(avgAbsTurn / 0.15, 1); // Normalize to 0-1
+            targetSpeed = MAX_SPEED - (MAX_SPEED - MIN_SPEED) * turnIntensity;
+          } else {
+            targetSpeed = MAX_SPEED;
+          }
+        }
+
+        boid.currentSpeed += (targetSpeed - boid.currentSpeed) * SPEED_SMOOTHING;
+
+        boid.x += Math.cos(boid.angle) * boid.currentSpeed;
+        boid.y += Math.sin(boid.angle) * boid.currentSpeed;
       });
 
     }
@@ -389,29 +410,27 @@ const BoidsCanvas: React.FC = () => {
       ctx.fillStyle = 'rgba(10, 10, 30, 0.3)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw boids as triangles
       boidsRef.current.forEach((boid) => {
         ctx.save();
         ctx.translate(boid.x, boid.y);
         ctx.rotate(boid.angle);
 
         ctx.beginPath();
-        ctx.moveTo(20, 0);  // Increased from 14 to 20 (bigger boids)
-        ctx.lineTo(-14, 10); // Increased from -10, 7 to -14, 10
-        ctx.lineTo(-14, -10); // Increased from -10, -7 to -14, -10
+        ctx.moveTo(20, 0);  
+        ctx.lineTo(-14, 10); 
+        ctx.lineTo(-14, -10); 
         ctx.closePath();
 
         ctx.fillStyle = 'rgba(100, 200, 255, 0.8)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(150, 220, 255, 0.9)';
-        ctx.lineWidth = 2; // Increased from 1.5 to 2
+        ctx.lineWidth = 2; 
         ctx.stroke();
 
         ctx.restore();
       });
     };
 
-    // Animation loop
     const animate = () => {
       updateBoids();
       draw();
@@ -425,7 +444,6 @@ const BoidsCanvas: React.FC = () => {
     // Resize handler - only resize canvas, don't reinitialize boids
     const handleResize = () => {
       resizeCanvas();
-      // adjustBoidCount() is already called in resizeCanvas()
     };
 
     window.addEventListener('resize', handleResize);
@@ -436,13 +454,97 @@ const BoidsCanvas: React.FC = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, []);
+  }, []); // Empty dependency array - only run once on mount
+
+  // Function to trigger fade out
+  const triggerFadeOut = () => {
+    if (!isFadedOut) {
+      setIsFadedOut(true);
+
+      // Delay pausing animation until fade transition completes (0.6s)
+      setTimeout(() => {
+        setIsPaused(true);
+      }, 600);
+    }
+  };
+
+  // Automatic fade out on any downward scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+
+      // If scrolled down at all, trigger fade out
+      if (scrollY > 0) {
+        triggerFadeOut();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial call
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isFadedOut]);
+
+
 
   return (
-    <div className="boids-container">
-      <canvas ref={canvasRef} className="boids-canvas" />
-      <div className="name-text">TRISTAN WINATA</div>
-    </div>
+    <>
+      <div
+        ref={containerRef}
+        className={`boids-container ${isFadedOut ? 'faded-out' : ''}`}
+        onClick={triggerFadeOut}
+        style={{ cursor: isFadedOut ? 'default' : 'pointer' }}
+      >
+        {/* Header with hedgehog button */}
+        <Header />
+
+        <canvas ref={canvasRef} className="boids-canvas" />
+
+        {/* Header text at center */}
+        <div className="header-text">
+          <div className="header-greeting">Hi! I'm</div>
+          <div className="header-name">Tristan Winata</div>
+        </div>
+
+        {/* Attribution link at bottom left */}
+        <a
+          href="https://www.cs.toronto.edu/~dt/siggraph97-course/cwr87/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="attribution-link"
+        >
+          Boids based off Craig Reynolds' Flocking Model
+        </a>
+
+        {/* Scroll indicator at bottom center */}
+        <div className={`scroll-indicator ${isFadedOut ? 'hidden' : ''}`}>
+          <div className="scroll-indicator-content">
+            <div className="scroll-arrow">↓</div>
+            <div className="scroll-text">Scroll</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Portfolio content below */}
+      <div className="portfolio-content">
+        <section className="portfolio-section">
+          <h2>About Me</h2>
+          <p>Welcome to my portfolio. I'm a developer passionate about creating interactive experiences.</p>
+        </section>
+
+        <section className="portfolio-section">
+          <h2>Projects</h2>
+          <p>Here are some of my recent projects...</p>
+        </section>
+
+        <section className="portfolio-section">
+          <h2>Contact</h2>
+          <p>Get in touch with me...</p>
+        </section>
+      </div>
+    </>
   );
 };
 
