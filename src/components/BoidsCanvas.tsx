@@ -60,11 +60,21 @@ const BoidsCanvas: React.FC = () => {
   const isPausedRef = useRef<boolean>(false); // Use ref to avoid re-running animation effect
   const [isFadedOut, setIsFadedOut] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
 
   // Sync isPaused state with ref so animation loop can access current value
   useEffect(() => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
+
+  // Show scroll indicator after 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowScrollIndicator(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -287,7 +297,7 @@ const BoidsCanvas: React.FC = () => {
           ctx.beginPath();
           ctx.moveTo(boid.x, boid.y);
           ctx.lineTo(targetX, targetY);
-          ctx.strokeStyle = 'rgba(100, 255, 100, 0.5)';
+          ctx.strokeStyle = 'rgba(50, 255, 50, 0.5)';
           ctx.lineWidth = 1;
           ctx.stroke();
 
@@ -321,7 +331,7 @@ const BoidsCanvas: React.FC = () => {
               ctx.beginPath();
               ctx.moveTo(boid.x, boid.y);
               ctx.lineTo(targetX, targetY);
-              ctx.strokeStyle = 'rgba(255, 100, 100, 0.8)';
+              ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
               ctx.lineWidth = 4;
               ctx.stroke();
 
@@ -343,7 +353,7 @@ const BoidsCanvas: React.FC = () => {
               ctx.beginPath();
               ctx.moveTo(boid.x, boid.y);
               ctx.lineTo(targetX, targetY);
-              ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
+              ctx.strokeStyle = 'rgba(50, 50, 255, 0.8)';
               ctx.lineWidth = 2;
               ctx.stroke();
 
@@ -405,26 +415,53 @@ const BoidsCanvas: React.FC = () => {
 
     }
 
+    // Helper function to convert HSL to RGB
+    const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+      let r, g, b;
+      if (s === 0) {
+        r = g = b = l;
+      } else {
+        const hue2rgb = (p: number, q: number, t: number) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+      }
+      return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    };
+
     // Draw function
     const draw = () => {
-      ctx.fillStyle = 'rgba(10, 10, 30, 0.3)';
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      boidsRef.current.forEach((boid) => {
+      boidsRef.current.forEach((boid, index) => {
         ctx.save();
         ctx.translate(boid.x, boid.y);
         ctx.rotate(boid.angle);
 
         ctx.beginPath();
-        ctx.moveTo(20, 0);  
-        ctx.lineTo(-14, 10); 
-        ctx.lineTo(-14, -10); 
+        ctx.moveTo(20, 0);
+        ctx.lineTo(-14, 10);
+        ctx.lineTo(-14, -10);
         ctx.closePath();
 
-        ctx.fillStyle = 'rgba(100, 200, 255, 0.8)';
+        // Cycle through RGB colors based on boid index
+        const hue = (index * 137.5) % 360; // Golden angle for nice distribution
+        const rgb = hslToRgb(hue / 360, 0.8, 0.6);
+        ctx.fillStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.8)`;
         ctx.fill();
-        ctx.strokeStyle = 'rgba(150, 220, 255, 0.9)';
-        ctx.lineWidth = 2; 
+        const rgbStroke = hslToRgb(hue / 360, 0.9, 0.7);
+        ctx.strokeStyle = `rgba(${rgbStroke[0]}, ${rgbStroke[1]}, ${rgbStroke[2]}, 0.9)`;
+        ctx.lineWidth = 2;
         ctx.stroke();
 
         ctx.restore();
@@ -519,7 +556,7 @@ const BoidsCanvas: React.FC = () => {
         </a>
 
         {/* Scroll indicator at bottom center */}
-        <div className={`scroll-indicator ${isFadedOut ? 'hidden' : ''}`}>
+        <div className={`scroll-indicator ${isFadedOut || !showScrollIndicator ? 'hidden' : ''}`}>
           <div className="scroll-indicator-content">
             <div className="scroll-arrow">↓</div>
             <div className="scroll-text">Scroll</div>
@@ -529,17 +566,17 @@ const BoidsCanvas: React.FC = () => {
 
       {/* Portfolio content below */}
       <div className="portfolio-content">
-        <section className="portfolio-section">
+        <section id="about" className="portfolio-section">
           <h2>About Me</h2>
           <p>Welcome to my portfolio. I'm a developer passionate about creating interactive experiences.</p>
         </section>
 
-        <section className="portfolio-section">
+        <section id="projects" className="portfolio-section">
           <h2>Projects</h2>
           <p>Here are some of my recent projects...</p>
         </section>
 
-        <section className="portfolio-section">
+        <section id="contact" className="portfolio-section">
           <h2>Contact</h2>
           <p>Get in touch with me...</p>
         </section>
