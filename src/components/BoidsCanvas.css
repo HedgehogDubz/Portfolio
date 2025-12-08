@@ -1,9 +1,12 @@
 .boids-container {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  /* Account for CRT frame: outer bevel (45px) + inner bevel (12px) = 57px */
+  top: 57px;
+  left: 57px;
+  right: 57px;
+  bottom: 57px;
+  width: auto;
+  height: auto;
   overflow: hidden;
   background: linear-gradient(135deg, #0f0e0d 0%, #1a1816 25%, #14130f 50%, #1a1816 75%, #0f0e0d 100%);
   z-index: 10;
@@ -59,8 +62,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  /* Width/height set via JavaScript - don't use CSS sizing to avoid scaling */
 }
 
 /* Large center background text - subtle and decorative with retro amber glow */
@@ -97,34 +99,37 @@
   }
 }
 
-/* Header text at center - retro glassmorphism card */
-.header-text {
+/* Retro computer window - Windows 95/98 style with amber/green palette */
+.retro-window {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  text-align: left;
   pointer-events: none;
   user-select: none;
   z-index: 10;
 
-  /* Muted glassmorphism effect */
-  background: rgba(26, 24, 22, 0.75);
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
-  border: 1px solid rgba(232, 212, 160, 0.2);
-  border-radius: 24px;
-  padding: 32px 64px;
+  /* Window outer frame with 3D beveled effect - warm retro tones */
+  background: rgba(42, 38, 34, 0.95); /* Dark warm gray instead of classic gray */
+  border-top: 2px solid rgba(232, 212, 160, 0.4);
+  border-left: 2px solid rgba(232, 212, 160, 0.4);
+  border-right: 2px solid rgba(20, 19, 15, 0.9);
+  border-bottom: 2px solid rgba(20, 19, 15, 0.9);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(232, 212, 160, 0.05) inset,
-    0 0 40px rgba(232, 212, 160, 0.08);
+    /* Outer shadow for depth */
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    /* Inner highlight - amber glow */
+    inset 1px 1px 0 rgba(232, 212, 160, 0.3),
+    /* Inner shadow */
+    inset -1px -1px 0 rgba(0, 0, 0, 0.4),
+    /* Subtle amber glow around window */
+    0 0 40px rgba(232, 212, 160, 0.1);
 
-  /* Subtle animation */
-  animation: float 6s ease-in-out infinite;
+  /* Subtle float animation */
+  animation: windowFloat 6s ease-in-out infinite;
 }
 
-@keyframes float {
+@keyframes windowFloat {
   0%, 100% {
     transform: translate(-50%, -50%) translateY(0px);
   }
@@ -133,30 +138,286 @@
   }
 }
 
+/* Window title bar */
+.window-title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 4px;
+  /* Amber/green gradient instead of blue */
+  background: linear-gradient(to right, rgba(20, 19, 15, 0.95), rgba(26, 24, 22, 0.95));
+  border-bottom: 2px solid rgba(20, 19, 15, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 212, 160, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  height: 24px;
+}
+
+.window-title {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(232, 212, 160, 0.95); /* Amber text */
+  letter-spacing: 1px;
+  padding-left: 4px;
+  text-shadow:
+    0 0 8px rgba(232, 212, 160, 0.4),
+    1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Window control buttons */
+.window-controls {
+  display: flex;
+  gap: 2px;
+  padding-right: 2px;
+}
+
+.window-button {
+  width: 16px;
+  height: 16px;
+  background: rgba(42, 38, 34, 0.95); /* Dark warm gray */
+  border-top: 1px solid rgba(232, 212, 160, 0.4);
+  border-left: 1px solid rgba(232, 212, 160, 0.4);
+  border-right: 1px solid rgba(20, 19, 15, 0.9);
+  border-bottom: 1px solid rgba(20, 19, 15, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(232, 212, 160, 0.9); /* Amber text */
+  cursor: pointer;
+  user-select: none;
+  text-shadow: 0 0 4px rgba(232, 212, 160, 0.3);
+}
+
+.window-button:active {
+  border-top: 1px solid rgba(20, 19, 15, 0.9);
+  border-left: 1px solid rgba(20, 19, 15, 0.9);
+  border-right: 1px solid rgba(232, 212, 160, 0.4);
+  border-bottom: 1px solid rgba(232, 212, 160, 0.4);
+}
+
+.window-button.close {
+  font-size: 14px;
+  line-height: 12px;
+}
+
+/* Window content area */
+.window-content {
+  /* Retro terminal background with slight transparency */
+  background: rgba(15, 14, 13, 0.92);
+  backdrop-filter: blur(8px) saturate(110%);
+  -webkit-backdrop-filter: blur(8px) saturate(110%);
+
+  /* Inner bevel for depth - amber/warm tones */
+  border-top: 2px solid rgba(20, 19, 15, 0.9);
+  border-left: 2px solid rgba(20, 19, 15, 0.9);
+  border-right: 2px solid rgba(232, 212, 160, 0.2);
+  border-bottom: 2px solid rgba(232, 212, 160, 0.2);
+
+  padding: 28px 32px;
+  text-align: left;
+
+  /* Fixed minimum height to prevent size changes */
+  min-height: 140px;
+
+  /* Subtle scanline effect */
+  position: relative;
+}
+
+.window-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.window-content > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Terminal line styling */
+.terminal-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-family: 'Courier New', 'Consolas', monospace;
+  line-height: 1.4;
+}
+
+.terminal-line.continue-prompt {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+/* Terminal prompt symbol */
+.terminal-prompt {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(160, 184, 158, 0.85);
+  text-shadow: 0 0 8px rgba(160, 184, 158, 0.35);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .header-greeting {
-  font-size: 23px;
+  font-size: 18px;
   font-weight: 700;
   font-family: 'Courier New', 'Consolas', monospace;
-  color: rgba(160, 184, 158, 0.85);
-  letter-spacing: 4px;
+  color: rgba(232, 212, 160, 0.85);
+  letter-spacing: 2px;
   text-transform: uppercase;
-  margin-bottom: 6px;
-  text-shadow: 0 0 10px rgba(160, 184, 158, 0.3);
+  text-shadow: 0 0 8px rgba(232, 212, 160, 0.35);
+  min-height: 18px; /* Prevent layout shift during typewriter */
+  line-height: 1.4;
 }
 
 .header-name {
-  font-size: 46px;
+  font-size: 36px;
   font-weight: 700;
   font-family: 'Courier New', 'Consolas', monospace;
   color: rgba(232, 212, 160, 1);
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-
   text-shadow:
-    0 0 10px rgba(232, 212, 160, 0.6),
-    0 0 20px rgba(232, 212, 160, 0.4),
-    0 0 30px rgba(232, 212, 160, 0.2),
+    0 0 12px rgba(232, 212, 160, 0.5),
+    0 0 24px rgba(232, 212, 160, 0.3),
     0 2px 4px rgba(0, 0, 0, 0.8);
+  min-height: 36px; /* Prevent layout shift during typewriter */
+  line-height: 1.2;
+}
+
+/* Continue prompt styling */
+.terminal-continue {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Courier New', 'Consolas', monospace;
+  color: rgba(160, 184, 158, 0.95);
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(160, 184, 158, 0.5);
+  line-height: 1.5;
+}
+
+/* Blinking cursor - only the underscore blinks */
+.blinking-cursor {
+  animation: cursorBlink 1s step-end infinite;
+}
+
+/* Blinking cursor effect for the underscore */
+@keyframes cursorBlink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Responsive retro window */
+@media (max-width: 768px) {
+  .window-content {
+    padding: 24px 28px;
+    min-height: 120px;
+  }
+
+  .terminal-line {
+    gap: 6px;
+    margin-bottom: 7px;
+  }
+
+  .terminal-line.continue-prompt {
+    margin-top: 14px;
+  }
+
+  .terminal-prompt {
+    font-size: 14px;
+  }
+
+  .header-greeting {
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    min-height: 16px;
+  }
+
+  .header-name {
+    font-size: 30px;
+    letter-spacing: 1.5px;
+    min-height: 30px;
+  }
+
+  .terminal-continue {
+    font-size: 13px;
+  }
+
+  .window-title {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .window-content {
+    padding: 20px 24px;
+    min-height: 110px;
+  }
+
+  .terminal-line {
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .terminal-line.continue-prompt {
+    margin-top: 12px;
+  }
+
+  .terminal-prompt {
+    font-size: 13px;
+  }
+
+  .header-greeting {
+    font-size: 15px;
+    letter-spacing: 1px;
+    min-height: 15px;
+  }
+
+  .header-name {
+    font-size: 26px;
+    letter-spacing: 1px;
+    min-height: 26px;
+  }
+
+  .terminal-continue {
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .window-title-bar {
+    height: 20px;
+  }
+
+  .window-title {
+    font-size: 10px;
+  }
+
+  .window-button {
+    width: 14px;
+    height: 14px;
+    font-size: 10px;
+  }
 }
 
 /* Attribution link at bottom left - retro style */
@@ -166,7 +427,7 @@
   left: 30px;
   font-size: 12px;
   font-family: 'Courier New', 'Consolas', monospace;
-  color: rgba(143, 166, 142, 0.8);
+  color: rgba(160, 184, 158, 0.95);
   text-decoration: none;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
@@ -176,25 +437,25 @@
   background: rgba(26, 24, 22, 0.7);
   backdrop-filter: blur(12px) saturate(110%);
   -webkit-backdrop-filter: blur(12px) saturate(110%);
-  border: 1px solid rgba(143, 166, 142, 0.25);
+  border: 1px solid rgba(160, 184, 158, 0.35);
   border-radius: 50px;
   padding: 10px 20px;
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(143, 166, 142, 0.05) inset,
-    0 0 15px rgba(143, 166, 142, 0.08);
+    0 0 0 1px rgba(160, 184, 158, 0.08) inset,
+    0 0 20px rgba(160, 184, 158, 0.15);
 
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  text-shadow: 0 0 8px rgba(143, 166, 142, 0.2);
+  text-shadow: 0 0 10px rgba(160, 184, 158, 0.4);
 }
 
 .attribution-link::before {
   content: "ℹ";
   font-size: 13px;
-  opacity: 0.7;
-  color: rgba(160, 184, 158, 0.9);
+  opacity: 0.9;
+  color: rgba(160, 184, 158, 0.95);
 }
 
 .attribution-link:hover {
@@ -215,6 +476,14 @@
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
+  .boids-container {
+    /* Tablet: outer (35px) + inner (10px) = 45px */
+    top: 45px;
+    left: 45px;
+    right: 45px;
+    bottom: 45px;
+  }
+
   .header-text {
     padding: 28px 48px;
   }
@@ -230,6 +499,14 @@
 }
 
 @media (max-width: 768px) {
+  .boids-container {
+    /* Mobile: outer (25px) + inner (7px) = 32px */
+    top: 32px;
+    left: 32px;
+    right: 32px;
+    bottom: 32px;
+  }
+
   .header-text {
     padding: 24px 40px;
     border-radius: 20px;
@@ -255,6 +532,14 @@
 }
 
 @media (max-width: 480px) {
+  .boids-container {
+    /* Small: outer (18px) + inner (5px) = 23px */
+    top: 23px;
+    left: 23px;
+    right: 23px;
+    bottom: 23px;
+  }
+
   .header-text {
     padding: 20px 32px;
     border-radius: 16px;
@@ -581,5 +866,646 @@
   .pulldown-text {
     font-size: 12px;
     letter-spacing: 1px;
+  }
+}
+
+/* ============================================
+   CRT MONITOR FRAME - AUTHENTIC VINTAGE BEVEL
+   Light source: Top-left at 45 degrees
+   ============================================ */
+
+/* Vintage CRT bezel color palette - authentic 1980s-90s beige/tan */
+:root {
+  /* Outer bevel sizes */
+  --outer-bevel-size: 45px;
+  --inner-bevel-size: 12px;
+
+  /* OUTER BEVEL - Raised surface (light catches top-left) */
+  /* Light source from top-left: Top/Left = bright, Bottom/Right = dark */
+  --outer-top: #d4c4a8;      /* Brightest - direct light */
+  --outer-left: #c9b99a;     /* Bright - angled light */
+  --outer-right: #8a7a62;    /* Dark - shadow side */
+  --outer-bottom: #6a5a4a;   /* Darkest - deep shadow */
+
+  /* INNER BEVEL - Recessed surface (inverted lighting) */
+  /* Recessed edges: Top/Left = dark (shadowed recess), Bottom/Right = bright (reflected light) */
+  --inner-top: #5a4a3a;      /* Darkest - recessed shadow */
+  --inner-left: #6a5a4a;     /* Dark - recessed shadow */
+  --inner-right: #c9b99a;    /* Bright - reflected light */
+  --inner-bottom: #b8a88a;   /* Brightest - reflected light from recess */
+}
+
+/* Main monitor frame container */
+.crt-monitor-frame {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Shared properties for outer bevel edges */
+.crt-monitor-frame::before,
+.crt-monitor-frame::after,
+.bevel-top,
+.bevel-bottom {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+/* ============================================
+   OUTER BEVEL - Raised frame catching light
+   ============================================ */
+
+/* TOP outer bevel (brightest - catches direct light) */
+.bevel-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--outer-bevel-size);
+  background: linear-gradient(
+    180deg,
+    var(--outer-top) 0%,
+    #cbb8a0 100%
+  );
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    calc(100% - var(--outer-bevel-size)) 100%,
+    var(--outer-bevel-size) 100%
+  );
+}
+
+/* BOTTOM outer bevel (darkest - deep shadow) */
+.bevel-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--outer-bevel-size);
+  background: linear-gradient(
+    180deg,
+    #7a6a5a 0%,
+    var(--outer-bottom) 100%
+  );
+  clip-path: polygon(
+    var(--outer-bevel-size) 0,
+    calc(100% - var(--outer-bevel-size)) 0,
+    100% 100%,
+    0 100%
+  );
+}
+
+/* LEFT outer bevel (bright - angled light) */
+.crt-monitor-frame::before {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--outer-bevel-size);
+  background: linear-gradient(
+    90deg,
+    var(--outer-left) 0%,
+    #baa98a 100%
+  );
+  clip-path: polygon(
+    0 0,
+    100% var(--outer-bevel-size),
+    100% calc(100% - var(--outer-bevel-size)),
+    0 100%
+  );
+}
+
+/* RIGHT outer bevel (dark - shadow side) */
+.crt-monitor-frame::after {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--outer-bevel-size);
+  background: linear-gradient(
+    90deg,
+    #9a8a72 0%,
+    var(--outer-right) 100%
+  );
+  clip-path: polygon(
+    0 var(--outer-bevel-size),
+    100% 0,
+    100% 100%,
+    0 calc(100% - var(--outer-bevel-size))
+  );
+}
+
+/* ============================================
+   INNER BEVEL - Recessed frame (inverted light)
+   ============================================ */
+
+/* Inner bevel container - positioned inside outer bevel */
+.inner-bevel-frame {
+  position: absolute;
+  top: var(--outer-bevel-size);
+  left: var(--outer-bevel-size);
+  right: var(--outer-bevel-size);
+  bottom: var(--outer-bevel-size);
+  pointer-events: none;
+}
+
+/* Shared properties for inner bevel edges */
+.inner-bevel-frame::before,
+.inner-bevel-frame::after,
+.inner-bevel-top,
+.inner-bevel-bottom {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+/* TOP inner bevel (darkest - recessed shadow) */
+.inner-bevel-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--inner-bevel-size);
+  background: linear-gradient(
+    180deg,
+    var(--inner-top) 0%,
+    #6a5a4a 100%
+  );
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    calc(100% - var(--inner-bevel-size)) 100%,
+    var(--inner-bevel-size) 100%
+  );
+}
+
+/* BOTTOM inner bevel (brightest - reflected light) */
+.inner-bevel-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--inner-bevel-size);
+  background: linear-gradient(
+    180deg,
+    #a89878 0%,
+    var(--inner-bottom) 100%
+  );
+  clip-path: polygon(
+    var(--inner-bevel-size) 0,
+    calc(100% - var(--inner-bevel-size)) 0,
+    100% 100%,
+    0 100%
+  );
+}
+
+/* LEFT inner bevel (dark - recessed shadow) */
+.inner-bevel-frame::before {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--inner-bevel-size);
+  background: linear-gradient(
+    90deg,
+    var(--inner-left) 0%,
+    #7a6a5a 100%
+  );
+  clip-path: polygon(
+    0 0,
+    100% var(--inner-bevel-size),
+    100% calc(100% - var(--inner-bevel-size)),
+    0 100%
+  );
+}
+
+/* RIGHT inner bevel (bright - reflected light) */
+.inner-bevel-frame::after {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--inner-bevel-size);
+  background: linear-gradient(
+    90deg,
+    #b8a88a 0%,
+    var(--inner-right) 100%
+  );
+  clip-path: polygon(
+    0 var(--inner-bevel-size),
+    100% 0,
+    100% 100%,
+    0 calc(100% - var(--inner-bevel-size))
+  );
+}
+
+
+
+/* Brand label (optional detail) */
+.crt-brand-label {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #42372b;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow:
+    0 1px 0 rgba(212, 196, 168, 0.5),
+    0 -1px 0 rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+/* Responsive adjustments for tablets */
+@media (max-width: 1024px) {
+  :root {
+    --outer-bevel-size: 35px;
+    --inner-bevel-size: 10px;
+  }
+
+  .bevel-top,
+  .bevel-bottom {
+    height: 35px;
+  }
+
+  .crt-monitor-frame::before,
+  .crt-monitor-frame::after {
+    width: 35px;
+  }
+
+  .inner-bevel-frame {
+    top: 35px;
+    left: 35px;
+    right: 35px;
+    bottom: 35px;
+  }
+
+  .inner-bevel-top,
+  .inner-bevel-bottom {
+    height: 10px;
+  }
+
+  .inner-bevel-frame::before,
+  .inner-bevel-frame::after {
+    width: 10px;
+  }
+
+  .crt-brand-label {
+    font-size: 9px;
+    bottom: 10px;
+  }
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  :root {
+    --outer-bevel-size: 25px;
+    --inner-bevel-size: 7px;
+  }
+
+  .bevel-top,
+  .bevel-bottom {
+    height: 25px;
+  }
+
+  .crt-monitor-frame::before,
+  .crt-monitor-frame::after {
+    width: 25px;
+  }
+
+  .inner-bevel-frame {
+    top: 25px;
+    left: 25px;
+    right: 25px;
+    bottom: 25px;
+  }
+
+  .inner-bevel-top,
+  .inner-bevel-bottom {
+    height: 7px;
+  }
+
+  .inner-bevel-frame::before,
+  .inner-bevel-frame::after {
+    width: 7px;
+  }
+
+  .crt-brand-label {
+    font-size: 7px;
+    bottom: 8px;
+    letter-spacing: 1.5px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  :root {
+    --outer-bevel-size: 18px;
+    --inner-bevel-size: 5px;
+  }
+
+  .bevel-top,
+  .bevel-bottom {
+    height: 18px;
+  }
+
+  .crt-monitor-frame::before,
+  .crt-monitor-frame::after {
+    width: 18px;
+  }
+
+  .inner-bevel-frame {
+    top: 18px;
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+  }
+
+  .inner-bevel-top,
+  .inner-bevel-bottom {
+    height: 5px;
+  }
+
+  .inner-bevel-frame::before,
+  .inner-bevel-frame::after {
+    width: 5px;
+  }
+
+  .crt-brand-label {
+    font-size: 6px;
+    bottom: 6px;
+    letter-spacing: 1px;
+  }
+}
+
+/* ============================================
+   NAVIGATION GRID
+   ============================================ */
+
+.nav-grid-container {
+  position: fixed;
+  /* Account for CRT frame: outer bevel (45px) + inner bevel (12px) = 57px */
+  top: 57px;
+  left: 57px;
+  right: 57px;
+  bottom: 57px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f0e0d 0%, #1a1816 25%, #14130f 50%, #1a1816 75%, #0f0e0d 100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.nav-grid-container.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 3x2 Grid layout */
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 40px;
+  padding: 40px;
+  max-width: 900px;
+  max-height: 700px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Staggered entrance animation keyframes */
+@keyframes navItemEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+    filter: blur(4px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.02);
+    filter: blur(0px);
+  }
+  80% {
+    transform: translateY(4px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* Individual navigation item */
+.nav-grid-item {
+  --item-index: 0; /* Set via inline style */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(26, 24, 22, 0.6);
+  border: 2px solid rgba(232, 212, 160, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+
+  /* Initial state - hidden before animation */
+  opacity: 0;
+  transform: translateY(30px) scale(0.8);
+
+  /* Retro bevel effect */
+  box-shadow:
+    inset 1px 1px 0 rgba(232, 212, 160, 0.1),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Animate items when grid becomes visible */
+.nav-grid-container.visible .nav-grid-item {
+  animation: navItemEntrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  /* Stagger delay: 80ms between each item */
+  /*animation-delay: calc((mod(var(--item-index), 3) - calc(ceil(var(--item-index) / 3))+ 1) * 800ms);*/
+  animation-delay: calc((mod(var(--item-index), 3) + max(1, min(2, var(--item-index) - 1)) - 1) * 80ms);
+}
+
+.nav-grid-item:hover {
+  background: rgba(35, 32, 28, 0.8);
+  border-color: rgba(232, 212, 160, 0.4);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    inset 1px 1px 0 rgba(232, 212, 160, 0.15),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
+    0 8px 30px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(232, 212, 160, 0.1);
+}
+
+.nav-grid-item:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Icon wrapper - square container for the image */
+.nav-icon-wrapper {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(42, 38, 34, 0.8);
+  border: 2px solid rgba(232, 212, 160, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+
+  /* Retro inset effect */
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.4),
+    inset -1px -1px 2px rgba(232, 212, 160, 0.05);
+}
+
+.nav-icon-image {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  filter:
+    brightness(0.9)
+    sepia(0.3)
+    saturate(0.8);
+  transition: filter 0.3s ease, transform 0.3s ease;
+  image-rendering: pixelated; 
+  image-rendering: crisp-edges;
+}
+
+.nav-grid-item:hover .nav-icon-image {
+  filter:
+    brightness(1.1)
+    sepia(0.2)
+    saturate(1);
+  transform: scale(1.1);
+}
+
+/* Title text under icon */
+.nav-icon-title {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(232, 212, 160, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(232, 212, 160, 0.3);
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.nav-grid-item:hover .nav-icon-title {
+  color: rgba(232, 212, 160, 1);
+  text-shadow:
+    0 0 12px rgba(232, 212, 160, 0.5),
+    0 0 20px rgba(232, 212, 160, 0.3);
+}
+
+/* Responsive Navigation Grid - Tablet */
+@media (max-width: 1024px) {
+  .nav-grid-container {
+    /* Tablet: outer (35px) + inner (10px) = 45px */
+    top: 45px;
+    left: 45px;
+    right: 45px;
+    bottom: 45px;
+  }
+
+  .nav-grid {
+    gap: 30px;
+    padding: 30px;
+    max-width: 750px;
+    max-height: 600px;
+  }
+
+  .nav-grid-item {
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .nav-icon-wrapper {
+    width: 85px;
+    height: 85px;
+  }
+
+  .nav-icon-title {
+    font-size: 14px;
+    letter-spacing: 1.5px;
+  }
+}
+
+/* Responsive Navigation Grid - Mobile */
+@media (max-width: 768px) {
+  .nav-grid-container {
+    /* Mobile: outer (25px) + inner (7px) = 32px */
+    top: 32px;
+    left: 32px;
+    right: 32px;
+    bottom: 32px;
+  }
+
+  .nav-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 20px;
+    padding: 20px;
+    max-width: 500px;
+    max-height: none;
+  }
+
+  .nav-grid-item {
+    gap: 10px;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .nav-icon-wrapper {
+    width: 70px;
+    height: 70px;
+    border-radius: 6px;
+  }
+
+  .nav-icon-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+}
+
+/* Responsive Navigation Grid - Small screens */
+@media (max-width: 480px) {
+  .nav-grid-container {
+    /* Small: outer (18px) + inner (5px) = 23px */
+    top: 23px;
+    left: 23px;
+    right: 23px;
+    bottom: 23px;
+  }
+
+  .nav-grid {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .nav-grid-item {
+    gap: 8px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .nav-icon-wrapper {
+    width: 55px;
+    height: 55px;
+    border-radius: 4px;
+  }
+
+  .nav-icon-title {
+    font-size: 10px;
+    letter-spacing: 0.5px;
   }
 }

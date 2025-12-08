@@ -24,18 +24,39 @@ a:hover {
 
 body {
   margin: 0;
-  padding: 0;
+  /* Padding to account for CRT frame: outer bevel + inner bevel */
+  padding: 57px; /* 45px + 12px */
   min-width: 320px;
-  min-height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Responsive padding for CRT monitor frame */
+@media (max-width: 1024px) {
+  body {
+    padding: 45px; /* 35px + 10px */
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 32px; /* 25px + 7px */
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 23px; /* 18px + 5px */
+  }
 }
 
 #root {
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 h1 {

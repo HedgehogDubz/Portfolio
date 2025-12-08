@@ -7,8 +7,8 @@ interface Boid {
   x: number;
   y: number;
   angle: number;
-  turningHistory: number[]; 
-  currentSpeed: number; 
+  turningHistory: number[];
+  currentSpeed: number;
 }
 
 interface Rectangle {
@@ -17,6 +17,23 @@ interface Rectangle {
   width: number;
   height: number;
 }
+
+// Navigation grid configuration - easily customizable
+interface NavItem {
+  id: string;
+  title: string;
+  icon: string; // Path to icon image
+  description?: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'about', title: 'About', icon: '/icons/portfolio_about.png', description: 'Learn more about me' },
+  { id: 'projects', title: 'Projects', icon: '/icons/portfolio_projects.png', description: 'View my work' },
+  { id: 'timeline', title: 'Timeline', icon: '/icons/portfolio_timeline.png', description: 'My journey' },
+  { id: 'home', title: 'Home', icon: '/icons/portfolio_backarrow.png', description: 'Return to start' },
+  { id: 'resume', title: 'Resume', icon: '/icons/portfolio_resume.png', description: 'My experience' },
+  { id: 'contact', title: 'Contact', icon: '/icons/portfolio_contact.png', description: 'Get in touch' },
+];
 
 // ============================================================================
 // CONSTANTS
@@ -102,7 +119,14 @@ const BoidsCanvas: React.FC = () => {
   const isPausedRef = useRef<boolean>(false); // Use ref to avoid re-running animation effect
   const [isFadedOut, setIsFadedOut] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const [showNavGrid, setShowNavGrid] = useState(false); // Navigation grid visibility
+  const [activeSection, setActiveSection] = useState<string | null>(null); // Current active section
+
+  // Typewriter effect state
+  const [displayedGreeting, setDisplayedGreeting] = useState('');
+  const [displayedName, setDisplayedName] = useState('');
+  const [showContinuePrompt, setShowContinuePrompt] = useState(false);
+  const [displayedPrompt, setDisplayedPrompt] = useState('');
 
   // Mouse tracking state
   const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
@@ -113,13 +137,30 @@ const BoidsCanvas: React.FC = () => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
 
-  // Show scroll indicator after 2 seconds
+  // Typewriter effect for terminal text
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowScrollIndicator(true);
-    }, 2000);
+    const greetingText = "Hi! I'm";
+    const nameText = "Tristan Winata";
+    const promptText = "> Click or Scroll to continue"; // No underscore in the text
 
-    return () => clearTimeout(timer);
+    // Show greeting and name immediately
+    setDisplayedGreeting(greetingText);
+    setDisplayedName(nameText);
+
+    // Wait 2 seconds, then show and type the prompt
+    setTimeout(() => {
+      setShowContinuePrompt(true);
+
+      let promptIndex = 0;
+      const promptInterval = setInterval(() => {
+        if (promptIndex <= promptText.length) {
+          setDisplayedPrompt(promptText.slice(0, promptIndex));
+          promptIndex++;
+        } else {
+          clearInterval(promptInterval);
+        }
+      }, 50); // Typing speed for prompt
+    }, 2000);
   }, []);
 
   // Mouse tracking for boid attraction
@@ -139,12 +180,12 @@ const BoidsCanvas: React.FC = () => {
         }
       }
 
-      // Get center text card bounds (glassmorphism card)
-      const textCard = document.querySelector('.header-text');
-      if (textCard) {
-        const textRect = textCard.getBoundingClientRect();
-        if (x >= textRect.left && x <= textRect.right &&
-            y >= textRect.top && y <= textRect.bottom) {
+      // Get center retro window bounds
+      const retroWindow = document.querySelector('.retro-window');
+      if (retroWindow) {
+        const windowRect = retroWindow.getBoundingClientRect();
+        if (x >= windowRect.left && x <= windowRect.right &&
+            y >= windowRect.top && y <= windowRect.bottom) {
           return true;
         }
       }
@@ -155,16 +196,6 @@ const BoidsCanvas: React.FC = () => {
         const attrRect = attribution.getBoundingClientRect();
         if (x >= attrRect.left && x <= attrRect.right &&
             y >= attrRect.top && y <= attrRect.bottom) {
-          return true;
-        }
-      }
-
-      // Get scroll indicator bounds
-      const scrollIndicator = document.querySelector('.scroll-indicator');
-      if (scrollIndicator) {
-        const scrollRect = scrollIndicator.getBoundingClientRect();
-        if (x >= scrollRect.left && x <= scrollRect.right &&
-            y >= scrollRect.top && y <= scrollRect.bottom) {
           return true;
         }
       }
@@ -216,11 +247,19 @@ const BoidsCanvas: React.FC = () => {
     if (!ctx) return;
 
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      createTextBounds();
-      if (boidsRef.current.length > 0) {
-        adjustBoidCount();
+      // Use container dimensions for proper sizing within bevel frame
+      const container = canvas.parentElement;
+      const width = container ? container.clientWidth : window.innerWidth;
+      const height = container ? container.clientHeight : window.innerHeight;
+
+      // Only resize if dimensions actually changed (prevents unnecessary redraws)
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        createTextBounds();
+        if (boidsRef.current.length > 0) {
+          adjustBoidCount();
+        }
       }
     };
 
@@ -611,41 +650,56 @@ const BoidsCanvas: React.FC = () => {
     };
   }, []); // Empty dependency array - only run once on mount
 
-  // Function to trigger fade out
+  // Function to trigger fade out and show navigation grid
   const triggerFadeOut = () => {
     if (!isFadedOut) {
       setIsFadedOut(true);
 
-      // Delay pausing animation until fade transition completes (0.6s)
+      // Show navigation grid after fade transition completes (0.6s)
       setTimeout(() => {
         setIsPaused(true);
+        setShowNavGrid(true);
       }, 600);
     }
   };
 
-  // Automatic fade out on any downward scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
+  // Function to return to home (boids canvas)
+  const returnToHome = () => {
+    setShowNavGrid(false);
+    setIsFadedOut(false);
+    setIsPaused(false);
+    setActiveSection(null);
+  };
 
-      // If scrolled down at all, trigger fade out
-      if (scrollY > 0) {
-        triggerFadeOut();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial call
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [isFadedOut]);
+  // Function to handle navigation item click
+  const handleNavClick = (itemId: string) => {
+    if (itemId === 'home') {
+      returnToHome();
+    } else {
+      setActiveSection(itemId);
+      // TODO: Navigate to the appropriate section/page
+      console.log(`Navigate to: ${itemId}`);
+    }
+  };
 
 
 
   return (
     <>
+      {/* CRT Monitor Frame with Clip-Path Bevels */}
+      <div className="crt-monitor-frame">
+        {/* Outer bevel edges */}
+        <div className="bevel-top"></div>
+        <div className="bevel-bottom"></div>
+        {/* Inner bevel container */}
+        <div className="inner-bevel-frame">
+          <div className="inner-bevel-top"></div>
+          <div className="inner-bevel-bottom"></div>
+        </div>
+        {/* Brand label */}
+        <div className="crt-brand-label">Porky Device 088</div>
+      </div>
+
       <div
         ref={containerRef}
         className={`boids-container ${isFadedOut ? 'faded-out' : ''}`}
@@ -657,10 +711,34 @@ const BoidsCanvas: React.FC = () => {
 
         <canvas ref={canvasRef} className="boids-canvas" />
 
-        {/* Header text at center */}
-        <div className="header-text">
-          <div className="header-greeting">Hi! I'm</div>
-          <div className="header-name">Tristan Winata</div>
+        {/* Header text at center - Retro window style */}
+        <div className="retro-window">
+          {/* Window title bar */}
+          <div className="window-title-bar">
+            <div className="window-title">WELCOME.SYS</div>
+            <div className="window-controls">
+              <div className="window-button minimize">_</div>
+              <div className="window-button maximize">□</div>
+              <div className="window-button close">×</div>
+            </div>
+          </div>
+          {/* Window content */}
+          <div className="window-content">
+            <div className="terminal-line">
+              <span className="header-greeting">{displayedGreeting}</span>
+            </div>
+            <div className="terminal-line">
+              <span className="header-name">{displayedName}</span>
+            </div>
+            {showContinuePrompt && (
+              <div className="terminal-line continue-prompt">
+                <span className="terminal-continue">
+                  {displayedPrompt}
+                  <span className="blinking-cursor">_</span>
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Attribution link at bottom left */}
@@ -672,40 +750,34 @@ const BoidsCanvas: React.FC = () => {
         >
           Boids based off Craig Reynolds' Flocking Model
         </a>
-
-        {/* Scroll indicator at bottom center */}
-        <div className={`scroll-indicator ${isFadedOut || !showScrollIndicator ? 'hidden' : ''}`}>
-          <div className="scroll-indicator-capsule">
-            <div className="chevron-arrow chevron-1">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div className="chevron-arrow chevron-2">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Portfolio content below */}
-      <div className="portfolio-content">
-        <section id="about" className="portfolio-section">
-          <h2>About Me</h2>
-          <p>Welcome to my portfolio. I'm a developer passionate about creating interactive experiences.</p>
-        </section>
-
-        <section id="projects" className="portfolio-section">
-          <h2>Projects</h2>
-          <p>Here are some of my recent projects...</p>
-        </section>
-
-        <section id="contact" className="portfolio-section">
-          <h2>Contact</h2>
-          <p>Get in touch with me...</p>
-        </section>
+      {/* Navigation Grid - appears after dismissing boids canvas */}
+      <div className={`nav-grid-container ${showNavGrid ? 'visible' : ''}`}>
+        <div className="nav-grid">
+          {NAV_ITEMS.map((item, index) => (
+            <button
+              key={item.id}
+              className="nav-grid-item"
+              style={{ '--item-index': index } as React.CSSProperties}
+              onClick={() => handleNavClick(item.id)}
+              aria-label={item.description || item.title}
+            >
+              <div className="nav-icon-wrapper">
+                <img
+                  src={item.icon}
+                  alt={item.title}
+                  className="nav-icon-image"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    (e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%233d3934" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23E8D4A0" font-size="40">${item.title.charAt(0)}</text></svg>`;
+                  }}
+                />
+              </div>
+              <span className="nav-icon-title">{item.title}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );
