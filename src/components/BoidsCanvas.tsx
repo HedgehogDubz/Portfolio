@@ -40,7 +40,7 @@ const NAV_ITEMS: NavItem[] = [
 // ============================================================================
 
 // Boid density
-const BOID_DENSITY = 3; // Boids per 10,000 square pixels
+const BOID_DENSITY = 1; // Boids per 10,000 square pixels
 
 // Speed constants
 const MAX_SPEED = 8; // Maximum speed when going straight
