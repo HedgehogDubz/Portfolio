@@ -35,6 +35,14 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'contact', title: 'Contact', icon: '/icons/portfolio_contact.png', description: 'Get in touch' },
 ];
 
+// Profile Card Configuration - easily editable
+const PROFILE_CONFIG = {
+  imagePath: '/images/profile.jpg', // Change this to your profile image path
+  name: 'Tristan',
+  title: 'Developer',
+  fallbackInitial: 'T', // Used if image fails to load
+};
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -43,8 +51,8 @@ const NAV_ITEMS: NavItem[] = [
 const BOID_DENSITY = 1; // Boids per 10,000 square pixels
 
 // Speed constants
-const MAX_SPEED = 8; // Maximum speed when going straight
-const MIN_SPEED = 8; // Minimum speed when turning sharply
+const MAX_SPEED = 6; // Maximum speed when going straight
+const MIN_SPEED = 6; // Minimum speed when turning sharply
 const TURNING_HISTORY_LENGTH = 7; // Number of frames to track for turning consistency
 const SPEED_SMOOTHING = 1; // How quickly speed adjusts (0-1, lower = smoother)
 
@@ -111,6 +119,7 @@ const normalizeAngle = (angle: number): number => {
 
 const BoidsCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const navBgCanvasRef = useRef<HTMLCanvasElement>(null);
   const boidsRef = useRef<Boid[]>([]);
   const textBoundsRef = useRef<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
   const animationFrameRef = useRef<number | null>(null);
@@ -148,10 +157,12 @@ const BoidsCanvas: React.FC = () => {
     setDisplayedName(nameText);
 
     // Wait 2 seconds, then show and type the prompt
-    setTimeout(() => {
-      setShowContinuePrompt(true);
+    setShowContinuePrompt(true);
+    setDisplayedPrompt(">");
 
-      let promptIndex = 0;
+    setTimeout(() => {
+
+      let promptIndex = 1;
       const promptInterval = setInterval(() => {
         if (promptIndex <= promptText.length) {
           setDisplayedPrompt(promptText.slice(0, promptIndex));
@@ -160,7 +171,7 @@ const BoidsCanvas: React.FC = () => {
           clearInterval(promptInterval);
         }
       }, 50); // Typing speed for prompt
-    }, 2000);
+    }, 1000);
   }, []);
 
   // Mouse tracking for boid attraction
@@ -650,15 +661,64 @@ const BoidsCanvas: React.FC = () => {
     };
   }, []); // Empty dependency array - only run once on mount
 
+  // Draw checkerboard tiles on nav background canvas
+  useEffect(() => {
+    const canvas = navBgCanvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const drawCheckerboard = () => {
+      const container = canvas.parentElement;
+      if (!container) return;
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // Only resize if dimensions changed
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      const tileSize = 40; // Size of each tile
+      const cols = Math.ceil(width / tileSize);
+      const rows = Math.ceil(height / tileSize);
+
+      // Dark colors for retro CRT feel
+      const color1 = '#0a0808'; // Near black
+      const color2 = '#1a0a0a'; // Very dark red
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const isEven = (row + col) % 2 === 0;
+          ctx.fillStyle = isEven ? color1 : color2;
+          ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+        }
+      }
+    };
+
+    drawCheckerboard();
+
+    const handleResize = () => drawCheckerboard();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [showNavGrid]);
+
   // Function to trigger fade out and show navigation grid
   const triggerFadeOut = () => {
     if (!isFadedOut) {
       setIsFadedOut(true);
+      // Show navigation grid immediately - it will fade in as boids fade out
+      setShowNavGrid(true);
 
-      // Show navigation grid after fade transition completes (0.6s)
+      // Pause boids after they've faded
       setTimeout(() => {
         setIsPaused(true);
-        setShowNavGrid(true);
       }, 600);
     }
   };
@@ -754,12 +814,38 @@ const BoidsCanvas: React.FC = () => {
 
       {/* Navigation Grid - appears after dismissing boids canvas */}
       <div className={`nav-grid-container ${showNavGrid ? 'visible' : ''}`}>
+        {/* Checkerboard background canvas */}
+        <canvas ref={navBgCanvasRef} className="nav-bg-canvas" />
+
+        {/* Profile Card - positioned to the left of the nav grid */}
+        <div
+          className="profile-card nav-grid-item"
+          style={{ '--item-index': 0 } as React.CSSProperties}
+        >
+          <div className="profile-image-wrapper">
+            <img
+              src={PROFILE_CONFIG.imagePath}
+              alt={`${PROFILE_CONFIG.name}'s profile`}
+              className="profile-image"
+              onError={(e) => {
+                // Fallback to placeholder with initial if image fails to load
+                (e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%233d3934" width="100" height="100"/><text x="50" y="60" text-anchor="middle" fill="%23E8D4A0" font-size="50" font-family="monospace">${PROFILE_CONFIG.fallbackInitial}</text></svg>`;
+              }}
+            />
+          </div>
+          <div className="profile-info">
+            <span className="profile-name">{PROFILE_CONFIG.name}</span>
+            <span className="profile-title">{PROFILE_CONFIG.title}</span>
+          </div>
+        </div>
+
+        {/* Navigation Grid - 3x2 grid of nav buttons */}
         <div className="nav-grid">
           {NAV_ITEMS.map((item, index) => (
             <button
               key={item.id}
               className="nav-grid-item"
-              style={{ '--item-index': index } as React.CSSProperties}
+              style={{ '--item-index': index} as React.CSSProperties}
               onClick={() => handleNavClick(item.id)}
               aria-label={item.description || item.title}
             >

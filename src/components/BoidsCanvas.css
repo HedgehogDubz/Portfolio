@@ -15,42 +15,23 @@
   pointer-events: auto;
 }
 
-/* Subtle CRT scanline effect overlay */
-.boids-container::before {
-  content: '';
+
+.crt-scanlines {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.12) 0px,
     transparent 1px,
     transparent 2px,
-    rgba(0, 0, 0, 0.15) 3px
+    rgba(0, 0, 0, 0.12) 3px
   );
   pointer-events: none;
-  z-index: 100;
-  opacity: 0.3;
-}
-
-/* Subtle vignette effect for CRT aesthetic */
-.boids-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 0%,
-    transparent 60%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
-  pointer-events: none;
-  z-index: 101;
+  z-index: 104;
+  opacity: 0.4;
 }
 
 .boids-container.faded-out {
@@ -64,6 +45,8 @@
   left: 0;
   /* Width/height set via JavaScript - don't use CSS sizing to avoid scaling */
 }
+
+
 
 /* Large center background text - subtle and decorative with retro amber glow */
 .name-text {
@@ -1101,7 +1084,7 @@
 /* Brand label (optional detail) */
 .crt-brand-label {
   position: absolute;
-  bottom: 14px;
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
   font-family: 'Courier New', 'Consolas', monospace;
@@ -1253,10 +1236,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f0e0d 0%, #1a1816 25%, #14130f 50%, #1a1816 75%, #0f0e0d 100%);
+  /* Transparent background - the boids-container background shows through */
+  background: transparent;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.5s ease, visibility 0.5s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  overflow: hidden;
+}
+
+/* Checkerboard background canvas */
+.nav-bg-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
 }
 
 .nav-grid-container.visible {
@@ -1264,8 +1259,18 @@
   visibility: visible;
 }
 
-/* 3x2 Grid layout */
+/* Flex layout: profile card on left, nav grid on right */
+.nav-grid-container.visible {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+/* Navigation grid - 3x2 grid of nav buttons */
 .nav-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
@@ -1273,8 +1278,106 @@
   padding: 40px;
   max-width: 900px;
   max-height: 700px;
+}
+
+/* Profile Card - positioned to the left of nav grid */
+.profile-card {
+  --item-index: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  width: 200px;
+  min-height: 280px;
+  flex-shrink: 0;
+  background: rgba(26, 24, 22, 0.85);
+  border: 2px solid rgba(232, 212, 160, 0.2);
+  border-radius: 12px;
+
+  /* Initial state - hidden before animation */
+  opacity: 0;
+  transform: translateY(30px) scale(0.8);
+
+  /* Retro bevel effect */
+  box-shadow:
+    inset 1px 1px 0 rgba(232, 212, 160, 0.1),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Animate profile card when grid becomes visible */
+.nav-grid-container.visible .profile-card {
+  animation: navItemEntrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay: 0ms; /* First item */
+}
+
+/* Profile image wrapper */
+.profile-image-wrapper {
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(232, 212, 160, 0.3);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.profile-image {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  filter:
+    sepia(0.15)
+    brightness(0.95)
+    contrast(1.05);
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.profile-card:hover .profile-image {
+  filter:
+    sepia(0.1)
+    brightness(1)
+    contrast(1.1);
+  transform: scale(1.05);
+}
+
+/* Profile info section */
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.profile-name {
+  color: rgba(232, 212, 160, 0.95);
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(232, 212, 160, 0.3);
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.profile-title {
+  color: rgba(232, 212, 160, 0.6);
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.profile-card:hover .profile-name {
+  color: rgba(232, 212, 160, 1);
+  text-shadow:
+    0 0 12px rgba(232, 212, 160, 0.5),
+    0 0 20px rgba(232, 212, 160, 0.3);
 }
 
 /* Staggered entrance animation keyframes */
@@ -1329,7 +1432,7 @@
 /* Animate items when grid becomes visible */
 .nav-grid-container.visible .nav-grid-item {
   animation: navItemEntrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  /* Stagger delay: 80ms between each item */
+  
   /*animation-delay: calc((mod(var(--item-index), 3) - calc(ceil(var(--item-index) / 3))+ 1) * 800ms);*/
   animation-delay: calc((mod(var(--item-index), 3) + max(1, min(2, var(--item-index) - 1)) - 1) * 80ms);
 }
@@ -1417,10 +1520,14 @@
     bottom: 45px;
   }
 
+  .nav-grid-container.visible {
+    gap: 30px;
+  }
+
   .nav-grid {
     gap: 30px;
     padding: 30px;
-    max-width: 750px;
+    max-width: 700px;
     max-height: 600px;
   }
 
@@ -1438,6 +1545,25 @@
     font-size: 14px;
     letter-spacing: 1.5px;
   }
+
+  .profile-card {
+    width: 160px;
+    min-height: 240px;
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .profile-image-wrapper {
+    max-width: 120px;
+  }
+
+  .profile-name {
+    font-size: 1.3rem;
+  }
+
+  .profile-title {
+    font-size: 0.9rem;
+  }
 }
 
 /* Responsive Navigation Grid - Mobile */
@@ -1450,6 +1576,13 @@
     bottom: 32px;
   }
 
+  /* Stack profile and grid vertically on mobile */
+  .nav-grid-container.visible {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* On mobile: 2x3 grid */
   .nav-grid {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(3, 1fr);
@@ -1457,6 +1590,34 @@
     padding: 20px;
     max-width: 500px;
     max-height: none;
+  }
+
+  /* Profile card becomes horizontal bar at top */
+  .profile-card {
+    width: 100%;
+    max-width: 500px;
+    min-height: auto;
+    flex-direction: row;
+    padding: 16px 24px;
+    gap: 20px;
+  }
+
+  .profile-image-wrapper {
+    max-width: 70px;
+    flex-shrink: 0;
+  }
+
+  .profile-info {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .profile-name {
+    font-size: 1.2rem;
+  }
+
+  .profile-title {
+    font-size: 0.85rem;
   }
 
   .nav-grid-item {
@@ -1487,9 +1648,31 @@
     bottom: 23px;
   }
 
+  .nav-grid-container.visible {
+    gap: 12px;
+  }
+
   .nav-grid {
     gap: 12px;
     padding: 12px;
+  }
+
+  .profile-card {
+    padding: 12px 16px;
+    gap: 12px;
+    max-width: none;
+  }
+
+  .profile-image-wrapper {
+    max-width: 50px;
+  }
+
+  .profile-name {
+    font-size: 1rem;
+  }
+
+  .profile-title {
+    font-size: 0.75rem;
   }
 
   .nav-grid-item {
