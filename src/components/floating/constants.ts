@@ -30,7 +30,7 @@ export const GREEN_COLOR = { r: 160, g: 184, b: 158 };
 export const CONNECTION_RADIUS = 1.8;
 
 // Angular distribution connection limits
-export const ANGULAR_SECTORS = 3; // Divide 360° into 8 sectors (45° each)
-export const MAX_PER_SECTOR = 2; // Max connections per angular sector per particle
+export const ANGULAR_SECTORS = 3; 
+export const MAX_PER_SECTOR = 2; 
 export const ANGULAR_PROXIMITY_THRESHOLD = Math.PI / 6; 
 
