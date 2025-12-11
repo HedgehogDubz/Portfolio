@@ -83,14 +83,38 @@
 }
 
 /* Retro computer window - Windows 95/98 style with amber/green palette */
-.retro-window {
+/* Windows container - centers and arranges windows */
+.windows-container {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  z-index: 10;
+  animation: windowsFloat 6s ease-in-out infinite;
+}
+
+@keyframes windowsFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-10px);
+  }
+}
+
+/* Column for Welcome + Continue windows */
+.windows-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.retro-window {
   pointer-events: none;
   user-select: none;
-  z-index: 10;
 
   /* Window outer frame with 3D beveled effect - warm retro tones */
   background: rgba(42, 38, 34, 0.95); /* Dark warm gray instead of classic gray */
@@ -107,17 +131,223 @@
     inset -1px -1px 0 rgba(0, 0, 0, 0.4),
     /* Subtle amber glow around window */
     0 0 40px rgba(232, 212, 160, 0.1);
-
-  /* Subtle float animation */
-  animation: windowFloat 6s ease-in-out infinite;
 }
 
-@keyframes windowFloat {
+/* Portrait window - spans full height of both other windows */
+.portrait-window {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+}
+
+.portrait-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px !important;
+  min-height: auto !important;
+}
+
+.portrait-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 2px solid rgba(20, 19, 15, 0.9);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 0 15px rgba(232, 212, 160, 0.15);
+  /* CRT glow effect */
+  filter: saturate(0.9) contrast(1.05);
+}
+
+/* Welcome window */
+.welcome-window {
+  min-width: 320px;
+}
+
+.welcome-window .window-content {
+  min-height: auto !important;
+  padding: 20px 28px !important;
+}
+
+/* Continue window */
+.continue-window {
+  pointer-events: auto;
+}
+
+.continue-content {
+  padding: 12px !important;
+  min-height: auto !important;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+/* Continue prompt text in welcome window */
+.continue-prompt {
+  margin-top: 16px;
+  opacity: 0.7;
+}
+
+.continue-prompt .prompt-text {
+  font-size: 13px;
+  color: rgba(232, 212, 160, 0.7);
+}
+
+/* Retro Continue Button */
+.retro-continue-button {
+  position: relative;
+  background: rgba(42, 38, 34, 0.95);
+  border-top: 2px solid rgba(232, 212, 160, 0.4);
+  border-left: 2px solid rgba(232, 212, 160, 0.4);
+  border-right: 2px solid rgba(20, 19, 15, 0.9);
+  border-bottom: 2px solid rgba(20, 19, 15, 0.9);
+  padding: 28px 60px;
+  width: 100%;
+  cursor: pointer;
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: rgba(232, 212, 160, 0.95);
+  letter-spacing: 4px;
+  text-shadow: 0 0 10px rgba(232, 212, 160, 0.5);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(232, 212, 160, 0.1),
+    0 0 15px rgba(232, 212, 160, 0.08);
+  transition: all 0.15s ease;
+  overflow: hidden;
+}
+
+/* Scanline overlay on button */
+.retro-continue-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
+
+.retro-continue-button:hover {
+  background: rgba(30, 28, 24, 0.95);
+  color: rgba(232, 212, 160, 1);
+  text-shadow: 0 0 15px rgba(232, 212, 160, 0.8);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(232, 212, 160, 0.3),
+    0 0 30px rgba(232, 212, 160, 0.2);
+}
+
+.retro-continue-button:active {
+  border-top: 2px solid rgba(20, 19, 15, 0.9);
+  border-left: 2px solid rgba(20, 19, 15, 0.9);
+  border-right: 2px solid rgba(232, 212, 160, 0.4);
+  border-bottom: 2px solid rgba(232, 212, 160, 0.4);
+  transform: translateY(1px);
+}
+
+.button-text {
+  position: relative;
+  z-index: 1;
+}
+
+.button-cursor {
+  position: relative;
+  z-index: 1;
+  animation: cursorBlink 1s step-end infinite;
+}
+
+/* Pulsing glow animation for button to draw attention */
+@keyframes buttonPulse {
   0%, 100% {
-    transform: translate(-50%, -50%) translateY(0px);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(232, 212, 160, 0.2),
+      0 0 20px rgba(232, 212, 160, 0.1);
   }
   50% {
-    transform: translate(-50%, -50%) translateY(-10px);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(232, 212, 160, 0.3),
+      0 0 35px rgba(232, 212, 160, 0.25);
+  }
+}
+
+.retro-continue-button {
+  animation: buttonPulse 2s ease-in-out infinite;
+}
+
+.retro-continue-button:hover {
+  animation: none;
+}
+
+/* Responsive: Stack vertically on smaller screens */
+@media (max-width: 768px) {
+  .windows-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .portrait-window {
+    width: 180px;
+    order: 1; /* Portrait on bottom */
+  }
+
+  .portrait-content {
+    padding: 10px !important;
+  }
+
+  .welcome-window {
+    min-width: 280px;
+  }
+
+  .welcome-window .window-content {
+    padding: 16px 20px !important;
+  }
+
+  .continue-content {
+    padding: 12px 16px !important;
+  }
+
+  .retro-continue-button {
+    padding: 20px 40px;
+    font-size: 18px;
+    letter-spacing: 3px;
+  }
+}
+
+@media (max-width: 480px) {
+  .windows-container {
+    gap: 10px;
+  }
+
+  .portrait-window {
+    width: 150px;
+  }
+
+  .welcome-window {
+    min-width: 240px;
+  }
+
+  .welcome-window .window-content {
+    padding: 14px 16px !important;
+  }
+
+  .retro-continue-button {
+    padding: 16px 32px;
+    font-size: 16px;
+    letter-spacing: 2px;
   }
 }
 
@@ -243,11 +473,6 @@
   line-height: 1.4;
 }
 
-.terminal-line.continue-prompt {
-  margin-top: 16px;
-  margin-bottom: 0;
-}
-
 /* Terminal prompt symbol */
 .terminal-prompt {
   font-size: 16px;
@@ -285,21 +510,7 @@
   line-height: 1.2;
 }
 
-/* Continue prompt styling */
-.terminal-continue {
-  font-size: 14px;
-  font-weight: 400;
-  font-family: 'Courier New', 'Consolas', monospace;
-  color: rgba(160, 184, 158, 0.95);
-  letter-spacing: 0.5px;
-  text-shadow: 0 0 10px rgba(160, 184, 158, 0.5);
-  line-height: 1.5;
-}
 
-/* Blinking cursor - only the underscore blinks */
-.blinking-cursor {
-  animation: cursorBlink 1s step-end infinite;
-}
 
 /* Blinking cursor effect for the underscore */
 @keyframes cursorBlink {
@@ -311,24 +522,11 @@
   }
 }
 
-/* Responsive retro window */
+/* Responsive terminal text */
 @media (max-width: 768px) {
-  .window-content {
-    padding: 24px 28px;
-    min-height: 120px;
-  }
-
   .terminal-line {
     gap: 6px;
     margin-bottom: 7px;
-  }
-
-  .terminal-line.continue-prompt {
-    margin-top: 14px;
-  }
-
-  .terminal-prompt {
-    font-size: 14px;
   }
 
   .header-greeting {
@@ -343,32 +541,15 @@
     min-height: 30px;
   }
 
-  .terminal-continue {
-    font-size: 13px;
-  }
-
   .window-title {
     font-size: 11px;
   }
 }
 
 @media (max-width: 480px) {
-  .window-content {
-    padding: 20px 24px;
-    min-height: 110px;
-  }
-
   .terminal-line {
     gap: 6px;
     margin-bottom: 6px;
-  }
-
-  .terminal-line.continue-prompt {
-    margin-top: 12px;
-  }
-
-  .terminal-prompt {
-    font-size: 13px;
   }
 
   .header-greeting {
@@ -381,11 +562,6 @@
     font-size: 26px;
     letter-spacing: 1px;
     min-height: 26px;
-  }
-
-  .terminal-continue {
-    font-size: 12px;
-    letter-spacing: 0.5px;
   }
 
   .window-title-bar {

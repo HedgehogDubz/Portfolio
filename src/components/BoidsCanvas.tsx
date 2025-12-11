@@ -15,8 +15,6 @@ const BoidsCanvas: React.FC = () => {
 
   const [displayedGreeting, setDisplayedGreeting] = useState('');
   const [displayedName, setDisplayedName] = useState('');
-  const [showContinuePrompt, setShowContinuePrompt] = useState(false);
-  const [displayedPrompt, setDisplayedPrompt] = useState('');
 
   const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
   const isMouseActiveRef = useRef<boolean>(false);
@@ -25,28 +23,13 @@ const BoidsCanvas: React.FC = () => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
 
-  // Typewriter effect
+  // Set greeting text immediately
   useEffect(() => {
     const greetingText = "Hi! I'm";
     const nameText = "Tristan Winata";
-    const promptText = "> Click or Scroll to continue";
 
     setDisplayedGreeting(greetingText);
     setDisplayedName(nameText);
-    setShowContinuePrompt(true);
-    setDisplayedPrompt(">");
-
-    setTimeout(() => {
-      let promptIndex = 1;
-      const promptInterval = setInterval(() => {
-        if (promptIndex <= promptText.length) {
-          setDisplayedPrompt(promptText.slice(0, promptIndex));
-          promptIndex++;
-        } else {
-          clearInterval(promptInterval);
-        }
-      }, 50);
-    }, 1000);
   }, []);
 
   // Mouse tracking
@@ -64,8 +47,9 @@ const BoidsCanvas: React.FC = () => {
         }
       }
 
-      const retroWindow = document.querySelector('.retro-window');
-      if (retroWindow) {
+      // Check all retro windows (portrait, welcome, continue)
+      const retroWindows = document.querySelectorAll('.retro-window');
+      for (const retroWindow of retroWindows) {
         const windowRect = retroWindow.getBoundingClientRect();
         if (x >= windowRect.left && x <= windowRect.right &&
             y >= windowRect.top && y <= windowRect.bottom) {
@@ -166,40 +150,76 @@ const BoidsCanvas: React.FC = () => {
       <div
         ref={containerRef}
         className={`boids-container ${isFadedOut ? 'faded-out' : ''}`}
-        onClick={triggerFadeOut}
-        style={{ cursor: isFadedOut ? 'default' : 'pointer' }}
       >
         <Header />
         <canvas ref={canvasRef} className="boids-canvas" />
 
-        <div className="retro-window">
-          <div className="window-title-bar">
-            <div className="window-title">WELCOME.SYS</div>
-            <div className="window-controls">
-              <div className="window-button minimize">_</div>
-              <div className="window-button maximize">□</div>
-              <div className="window-button close">×</div>
+        {/* Windows container for layout */}
+        <div className="windows-container">
+          {/* Left column: Welcome + Continue */}
+          <div className="windows-column">
+            {/* Welcome Window */}
+            <div className="retro-window welcome-window">
+              <div className="window-title-bar">
+                <div className="window-title">WELCOME.SYS</div>
+                <div className="window-controls">
+                  <div className="window-button minimize">_</div>
+                  <div className="window-button maximize">□</div>
+                  <div className="window-button close">×</div>
+                </div>
+              </div>
+              <div className="window-content">
+                <div className="terminal-line">
+                  <span className="header-greeting">{displayedGreeting}</span>
+                </div>
+                <div className="terminal-line">
+                  <span className="header-name">{displayedName}</span>
+                </div>
+                <div className="terminal-line continue-prompt">
+                  <span className="prompt-text">Press continue to proceed...</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Continue Button Window */}
+            <div className="retro-window continue-window">
+              <div className="window-title-bar">
+                <div className="window-title">CONTINUE.EXE</div>
+                <div className="window-controls">
+                  <div className="window-button minimize">_</div>
+                  <div className="window-button maximize">□</div>
+                  <div className="window-button close">×</div>
+                </div>
+              </div>
+              <div className="window-content continue-content">
+                <button
+                  className="retro-continue-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerFadeOut();
+                  }}
+                >
+                  CONTINUE
+                </button>
+              </div>
             </div>
           </div>
-          <div className="window-content">
-            <div className="terminal-line">
-              <span className="header-greeting">{displayedGreeting}</span>
-            </div>
-            <div className="terminal-line">
-              <span className="header-name">{displayedName}</span>
-            </div>
-            {showContinuePrompt && (
-              <div className="terminal-line continue-prompt">
-                <span className="terminal-continue">
-                  {displayedPrompt}
-                  <span className="blinking-cursor">_</span>
-                </span>
+
+          {/* Portrait Window */}
+          <div className="retro-window portrait-window">
+            <div className="window-title-bar">
+              <div className="window-title">PORTRAIT.JPG</div>
+              <div className="window-controls">
+                <div className="window-button minimize">_</div>
+                <div className="window-button maximize">□</div>
+                <div className="window-button close">×</div>
               </div>
-            )}
+            </div>
+            <div className="window-content portrait-content">
+              <img src="/portrait.jpg" alt="Portrait" className="portrait-image" />
+            </div>
           </div>
         </div>
-
-
       </div>
 
       <NavGrid visible={showNavGrid} onNavClick={handleNavClick} />
