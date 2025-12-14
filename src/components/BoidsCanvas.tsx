@@ -15,6 +15,8 @@ const BoidsCanvas: React.FC = () => {
 
   const [displayedGreeting, setDisplayedGreeting] = useState('');
   const [displayedName, setDisplayedName] = useState('');
+  const [displayedPrompt, setDisplayedPrompt] = useState('');
+  const [showPromptCursor, setShowPromptCursor] = useState(true);
 
   const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
   const isMouseActiveRef = useRef<boolean>(false);
@@ -23,13 +25,29 @@ const BoidsCanvas: React.FC = () => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
 
-  // Set greeting text immediately
+  // Set greeting text immediately, typewriter effect for prompt
   useEffect(() => {
     const greetingText = "Hi! I'm";
     const nameText = "Tristan Winata";
+    const promptText = "Press CONTINUE to proceed";
 
     setDisplayedGreeting(greetingText);
     setDisplayedName(nameText);
+
+    // Typewriter effect for prompt text (cursor rendered separately)
+    let promptIndex = 0;
+    const typingInterval = setInterval(() => {
+      if (promptIndex < promptText.length) {
+        promptIndex += 1;
+        setDisplayedPrompt(promptText.slice(0, promptIndex));
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 50);
+
+    return () => {
+      clearInterval(typingInterval);
+    };
   }, []);
 
   // Mouse tracking
@@ -176,7 +194,11 @@ const BoidsCanvas: React.FC = () => {
                   <span className="header-name">{displayedName}</span>
                 </div>
                 <div className="terminal-line continue-prompt">
-                  <span className="prompt-text">Press continue to proceed...</span>
+                  <span className="prompt-symbol">&gt; </span>
+                  <span className="prompt-text">
+                    {displayedPrompt}
+                    {showPromptCursor && <span className="prompt-cursor blink" />}
+                  </span>
                 </div>
               </div>
             </div>

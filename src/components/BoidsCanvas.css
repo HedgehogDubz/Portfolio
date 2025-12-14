@@ -187,22 +187,40 @@
 /* Continue prompt text in welcome window */
 .continue-prompt {
   margin-top: 16px;
-  opacity: 0.7;
+  gap: 0;
+}
+
+.continue-prompt .prompt-symbol {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(160, 184, 158, 0.85);
+  margin-right: 8px;
 }
 
 .continue-prompt .prompt-text {
-  font-size: 13px;
-  color: rgba(232, 212, 160, 0.7);
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(160, 184, 158, 0.85);
+}
+
+.continue-prompt .prompt-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.4em; /* make the cursor bar really long */
+  margin-left: 3px;
+  background-color: rgba(160, 184, 158, 0.85);
+  vertical-align: text-bottom;
+}
+
+.continue-prompt .prompt-cursor.blink {
+  animation: cursorBlink 1s step-end infinite;
 }
 
 /* Retro Continue Button */
 .retro-continue-button {
   position: relative;
   background: rgba(42, 38, 34, 0.95);
-  border-top: 2px solid rgba(232, 212, 160, 0.4);
-  border-left: 2px solid rgba(232, 212, 160, 0.4);
-  border-right: 2px solid rgba(20, 19, 15, 0.9);
-  border-bottom: 2px solid rgba(20, 19, 15, 0.9);
+  border: 2px solid rgba(232, 212, 160, 0.4);
   padding: 28px 60px;
   width: 100%;
   cursor: pointer;
@@ -211,12 +229,11 @@
   font-weight: 700;
   color: rgba(232, 212, 160, 0.95);
   letter-spacing: 4px;
-  text-shadow: 0 0 10px rgba(232, 212, 160, 0.5);
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(232, 212, 160, 0.1),
-    0 0 15px rgba(232, 212, 160, 0.08);
-  transition: all 0.15s ease;
+    inset 1px 1px 0 rgba(232, 212, 160, 0.15),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
   overflow: hidden;
 }
 
@@ -239,21 +256,23 @@
 }
 
 .retro-continue-button:hover {
-  background: rgba(30, 28, 24, 0.95);
+  border-color: rgba(232, 212, 160, 0.7);
   color: rgba(232, 212, 160, 1);
-  text-shadow: 0 0 15px rgba(232, 212, 160, 0.8);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(232, 212, 160, 0.3),
-    0 0 30px rgba(232, 212, 160, 0.2);
 }
 
 .retro-continue-button:active {
-  border-top: 2px solid rgba(20, 19, 15, 0.9);
-  border-left: 2px solid rgba(20, 19, 15, 0.9);
-  border-right: 2px solid rgba(232, 212, 160, 0.4);
-  border-bottom: 2px solid rgba(232, 212, 160, 0.4);
   transform: translateY(1px);
+}
+
+.retro-continue-button:active {
+  background: rgba(35, 32, 28, 0.95);
+  border-color: rgba(232, 212, 160, 0.5);
+  transform: translateY(1px);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.5),
+    inset 1px 1px 0 rgba(0, 0, 0, 0.2),
+    inset -1px -1px 0 rgba(232, 212, 160, 0.1),
+    0 0 20px rgba(232, 212, 160, 0.1);
 }
 
 .button-text {
@@ -265,30 +284,6 @@
   position: relative;
   z-index: 1;
   animation: cursorBlink 1s step-end infinite;
-}
-
-/* Pulsing glow animation for button to draw attention */
-@keyframes buttonPulse {
-  0%, 100% {
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(232, 212, 160, 0.2),
-      0 0 20px rgba(232, 212, 160, 0.1);
-  }
-  50% {
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(232, 212, 160, 0.3),
-      0 0 35px rgba(232, 212, 160, 0.25);
-  }
-}
-
-.retro-continue-button {
-  animation: buttonPulse 2s ease-in-out infinite;
-}
-
-.retro-continue-button:hover {
-  animation: none;
 }
 
 /* Responsive: Stack vertically on smaller screens */
@@ -484,7 +479,7 @@
 }
 
 .header-greeting {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   font-family: 'Courier New', 'Consolas', monospace;
   color: rgba(232, 212, 160, 0.85);
@@ -492,7 +487,7 @@
   text-transform: uppercase;
   text-shadow: 0 0 8px rgba(232, 212, 160, 0.35);
   min-height: 18px; /* Prevent layout shift during typewriter */
-  line-height: 1.4;
+  line-height: 1;
 }
 
 .header-name {
@@ -507,7 +502,7 @@
     0 0 24px rgba(232, 212, 160, 0.3),
     0 2px 4px rgba(0, 0, 0, 0.8);
   min-height: 36px; /* Prevent layout shift during typewriter */
-  line-height: 1.2;
+  line-height: 1;
 }
 
 
