@@ -79,29 +79,33 @@ const NavGrid: React.FC<NavGridProps> = ({ visible, onNavClick }) => {
           </div>
         </div>
 
-        <div className="nav-grid">
-          {NAV_ITEMS.map((item, index) => (
-            <button
-              key={item.id}
-              className="nav-grid-item"
-              style={{ '--item-index': index } as React.CSSProperties}
-              onClick={() => onNavClick(item.id)}
-              aria-label={item.description || item.title}
-            >
-              <div className="nav-icon-wrapper">
-                <img
-                  src={item.icon}
-                  alt={item.title}
-                  className="nav-icon-image"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%233d3934" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23E8D4A0" font-size="40">${item.title.charAt(0)}</text></svg>`;
-                  }}
-                />
-              </div>
-              <span className="nav-icon-title">{item.title}</span>
-            </button>
-          ))}
-        </div>
+	    <div className="nav-grid">
+	      {NAV_ITEMS.map((item, index) => (
+	        <div
+	          key={item.id}
+	          className="nav-grid-item"
+	          style={{ '--item-index': index } as React.CSSProperties}
+	        >
+	          <button
+	            className="nav-icon-button"
+	            onClick={() => onNavClick(item.id)}
+	            aria-label={item.description || item.title}
+	          >
+	            <div className="nav-icon-wrapper">
+	              <img
+	                src={item.icon}
+	                alt={item.title}
+	                className="nav-icon-image"
+	                onError={(e) => {
+	                  (e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%233d3934" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23E8D4A0" font-size="40">${item.title.charAt(0)}</text></svg>`;
+	                }}
+	              />
+	            </div>
+	          </button>
+	          <span className="nav-icon-title">{item.title}</span>
+	        </div>
+	      ))}
+	    </div>
       </div>
     </div>
   );

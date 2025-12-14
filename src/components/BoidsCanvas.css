@@ -1,10 +1,10 @@
 .boids-container {
-  position: fixed;
-  /* Account for CRT frame: outer bevel (45px) + inner bevel (12px) = 57px */
-  top: 57px;
-  left: 57px;
-  right: 57px;
-  bottom: 57px;
+	position: fixed;
+	/* Account for CRT frame dynamically: outer bevel + inner bevel */
+	top: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
+	left: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
+	right: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
+	bottom: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
   width: auto;
   height: auto;
   overflow: hidden;
@@ -630,15 +630,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-  .boids-container {
-    /* Tablet: outer (35px) + inner (10px) = 45px */
-    top: 45px;
-    left: 45px;
-    right: 45px;
-    bottom: 45px;
-  }
-
-  .header-text {
+	.header-text {
     padding: 28px 48px;
   }
 
@@ -653,15 +645,7 @@
 }
 
 @media (max-width: 768px) {
-  .boids-container {
-    /* Mobile: outer (25px) + inner (7px) = 32px */
-    top: 32px;
-    left: 32px;
-    right: 32px;
-    bottom: 32px;
-  }
-
-  .header-text {
+	.header-text {
     padding: 24px 40px;
     border-radius: 20px;
   }
@@ -686,15 +670,7 @@
 }
 
 @media (max-width: 480px) {
-  .boids-container {
-    /* Small: outer (18px) + inner (5px) = 23px */
-    top: 23px;
-    left: 23px;
-    right: 23px;
-    bottom: 23px;
-  }
-
-  .header-text {
+	.header-text {
     padding: 20px 32px;
     border-radius: 16px;
   }
@@ -1030,9 +1006,9 @@
 
 /* Vintage CRT bezel color palette - authentic 1980s-90s beige/tan */
 :root {
-  /* Outer bevel sizes */
-  --outer-bevel-size: 45px;
-  --inner-bevel-size: 12px;
+	/* Outer/inner bevel sizes - scale smoothly with viewport */
+	--outer-bevel-size: clamp(18px, 4vw, 45px);
+	--inner-bevel-size: clamp(5px, 1.1vw, 12px);
 
   /* OUTER BEVEL - Raised surface (light catches top-left) */
   /* Light source from top-left: Top/Left = bright, Bottom/Right = dark */
@@ -1272,124 +1248,28 @@
 
 /* Responsive adjustments for tablets */
 @media (max-width: 1024px) {
-  :root {
-    --outer-bevel-size: 35px;
-    --inner-bevel-size: 10px;
-  }
-
-  .bevel-top,
-  .bevel-bottom {
-    height: 35px;
-  }
-
-  .crt-monitor-frame::before,
-  .crt-monitor-frame::after {
-    width: 35px;
-  }
-
-  .inner-bevel-frame {
-    top: 35px;
-    left: 35px;
-    right: 35px;
-    bottom: 35px;
-  }
-
-  .inner-bevel-top,
-  .inner-bevel-bottom {
-    height: 10px;
-  }
-
-  .inner-bevel-frame::before,
-  .inner-bevel-frame::after {
-    width: 10px;
-  }
-
-  .crt-brand-label {
-    font-size: 9px;
-    bottom: 10px;
-  }
+	.crt-brand-label {
+		font-size: 9px;
+		bottom: 10px;
+	}
 }
 
 /* Responsive adjustments for mobile */
 @media (max-width: 768px) {
-  :root {
-    --outer-bevel-size: 25px;
-    --inner-bevel-size: 7px;
-  }
-
-  .bevel-top,
-  .bevel-bottom {
-    height: 25px;
-  }
-
-  .crt-monitor-frame::before,
-  .crt-monitor-frame::after {
-    width: 25px;
-  }
-
-  .inner-bevel-frame {
-    top: 25px;
-    left: 25px;
-    right: 25px;
-    bottom: 25px;
-  }
-
-  .inner-bevel-top,
-  .inner-bevel-bottom {
-    height: 7px;
-  }
-
-  .inner-bevel-frame::before,
-  .inner-bevel-frame::after {
-    width: 7px;
-  }
-
-  .crt-brand-label {
-    font-size: 7px;
-    bottom: 8px;
-    letter-spacing: 1.5px;
-  }
+	.crt-brand-label {
+		font-size: 7px;
+		bottom: 8px;
+		letter-spacing: 1.5px;
+	}
 }
 
 /* Extra small screens */
 @media (max-width: 480px) {
-  :root {
-    --outer-bevel-size: 18px;
-    --inner-bevel-size: 5px;
-  }
-
-  .bevel-top,
-  .bevel-bottom {
-    height: 18px;
-  }
-
-  .crt-monitor-frame::before,
-  .crt-monitor-frame::after {
-    width: 18px;
-  }
-
-  .inner-bevel-frame {
-    top: 18px;
-    left: 18px;
-    right: 18px;
-    bottom: 18px;
-  }
-
-  .inner-bevel-top,
-  .inner-bevel-bottom {
-    height: 5px;
-  }
-
-  .inner-bevel-frame::before,
-  .inner-bevel-frame::after {
-    width: 5px;
-  }
-
-  .crt-brand-label {
-    font-size: 6px;
-    bottom: 6px;
-    letter-spacing: 1px;
-  }
+	.crt-brand-label {
+		font-size: 6px;
+		bottom: 6px;
+		letter-spacing: 1px;
+	}
 }
 
 /* ============================================
@@ -1398,11 +1278,11 @@
 
 .nav-grid-container {
   position: fixed;
-  /* Account for CRT frame: outer bevel (45px) + inner bevel (12px) = 57px */
-  top: 57px;
-  left: 57px;
-  right: 57px;
-  bottom: 57px;
+	/* Account for CRT frame: outer + inner bevel, sized dynamically */
+	top: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
+	left: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
+	right: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
+	bottom: calc(var(--outer-bevel-size) + var(--inner-bevel-size));
   z-index: 50;
   display: flex;
   align-items: center;
@@ -1433,10 +1313,14 @@
 /* Content wrapper - holds profile card and nav grid side by side */
 .nav-content-wrapper {
   display: flex;
-  align-items: stretch;
-  justify-content: center;
+	align-items: stretch;
+	justify-content: space-between;
   gap: 40px;
   z-index: 1;
+	width: 100%;
+	height: 100%;
+	padding: 32px 40px;
+	box-sizing: border-box;
 }
 
 /* Navigation grid - 3x2 grid of nav buttons */
@@ -1444,11 +1328,13 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(2, 1fr);
   gap: 40px;
-  max-width: 900px;
-  max-height: 700px;
+	flex: 1;
+	width: 100%;
+	height: 100%;
+	align-self: stretch;
 }
 
 /* Profile Card - positioned to the left of nav grid */
@@ -1462,7 +1348,8 @@
   justify-content: center;
   gap: 20px;
   padding: 24px;
-  width: 200px;
+	/* Dynamically scale with available space on desktop */
+	width: clamp(180px, 20vw, 260px);
   flex-shrink: 0;
   background: rgba(26, 24, 22, 0.85);
   border: 2px solid rgba(232, 212, 160, 0.2);
@@ -1487,8 +1374,9 @@
 
 /* Profile image wrapper */
 .profile-image-wrapper {
-  width: 100%;
-  max-width: 180px;
+	width: 100%;
+	/* Grow with card but stay within reasonable bounds */
+	max-width: clamp(150px, 60%, 220px);
   aspect-ratio: 1;
   border-radius: 50%;
   overflow: hidden;
@@ -1529,7 +1417,8 @@
 .profile-name {
   color: rgba(232, 212, 160, 0.95);
   font-family: 'VT323', 'Courier New', monospace;
-  font-size: 1.5rem;
+  /* Smoothly scale name size with viewport */
+  font-size: clamp(1.1rem, 1.6vw, 1.6rem);
   letter-spacing: 2px;
   text-shadow: 0 0 8px rgba(232, 212, 160, 0.3);
   transition: color 0.3s ease, text-shadow 0.3s ease;
@@ -1538,7 +1427,8 @@
 .profile-title {
   color: rgba(232, 212, 160, 0.6);
   font-family: 'VT323', 'Courier New', monospace;
-  font-size: 1rem;
+  /* Smoothly scale title size with viewport */
+  font-size: clamp(0.8rem, 1.1vw, 1.1rem);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -1581,25 +1471,17 @@
   justify-content: center;
   gap: 16px;
   padding: 24px;
-  background: rgba(26, 24, 22, 0.6);
-  border: 2px solid rgba(232, 212, 160, 0.2);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   text-decoration: none;
 
   /* Initial state - hidden before animation */
   opacity: 0;
   transform: translateY(30px) scale(0.8);
 
-  /* Retro bevel effect */
-  box-shadow:
-    inset 1px 1px 0 rgba(232, 212, 160, 0.1),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
-    0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* Animate items when grid becomes visible */
+/* Animate items when grid becomes visible (position/opacity only) */
 .nav-grid-container.visible .nav-grid-item {
   animation: navItemEntrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   
@@ -1607,25 +1489,22 @@
   animation-delay: calc((mod(var(--item-index), 3) + max(1, min(2, var(--item-index) - 1)) - 1) * 80ms);
 }
 
-.nav-grid-item:hover {
-  background: rgba(35, 32, 28, 0.8);
-  border-color: rgba(232, 212, 160, 0.4);
-  transform: translateY(-4px) scale(1.02);
-  box-shadow:
-    inset 1px 1px 0 rgba(232, 212, 160, 0.15),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
-    0 8px 30px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(232, 212, 160, 0.1);
+/* Icon button: only the icon itself is interactive */
+.nav-icon-button {
+  display: inline-flex;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 
-.nav-grid-item:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* Icon wrapper - square container for the image */
+/* Icon wrapper - square container for the image (scales dynamically) */
 .nav-icon-wrapper {
-  width: 100px;
-  height: 100px;
+		/* Smoothly scale with viewport instead of jumping at breakpoints */
+		/* Bigger icons that respond more strongly to screen width, no explicit max */
+		width: max(72px, 14vw);
+		height: max(72px, 14vw);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1641,8 +1520,8 @@
 }
 
 .nav-icon-image {
-  width: 70%;
-  height: 70%;
+	width: 80%;
+	height: 80%;
   object-fit: contain;
   filter:
     brightness(0.9)
@@ -1653,7 +1532,8 @@
   image-rendering: crisp-edges;
 }
 
-.nav-grid-item:hover .nav-icon-image {
+.nav-icon-button:hover .nav-icon-image,
+.nav-icon-button:focus-visible .nav-icon-image {
   filter:
     brightness(1.1)
     sepia(0.2)
@@ -1671,9 +1551,8 @@
   letter-spacing: 2px;
   text-shadow: 0 0 8px rgba(232, 212, 160, 0.3);
   transition: color 0.3s ease, text-shadow 0.3s ease;
-}
-
-.nav-grid-item:hover .nav-icon-title {
+.nav-icon-button:hover + .nav-icon-title,
+.nav-icon-button:focus-visible + .nav-icon-title {
   color: rgba(232, 212, 160, 1);
   text-shadow:
     0 0 12px rgba(232, 212, 160, 0.5),
@@ -1682,33 +1561,21 @@
 
 /* Responsive Navigation Grid - Tablet */
 @media (max-width: 1024px) {
-  .nav-grid-container {
-    /* Tablet: outer (35px) + inner (10px) = 45px */
-    top: 45px;
-    left: 45px;
-    right: 45px;
-    bottom: 45px;
-  }
-
-  .nav-content-wrapper {
-    gap: 30px;
+	.nav-content-wrapper {
+	    gap: 30px;
+	    padding: 24px 32px;
   }
 
   .nav-grid {
-    gap: 30px;
-    max-width: 700px;
-    max-height: 600px;
+	    gap: 30px;
   }
 
   .nav-grid-item {
-    gap: 12px;
-    padding: 20px;
+	    gap: 12px;
+	    padding: 20px;
   }
 
-  .nav-icon-wrapper {
-    width: 85px;
-    height: 85px;
-  }
+	  /* Icon size now scales via clamp(); no fixed width/height override needed here */
 
   .nav-icon-title {
     font-size: 14px;
@@ -1716,35 +1583,22 @@
   }
 
   .profile-card {
-    width: 160px;
+	    /* Slightly smaller but still dynamic on tablet */
+	    width: clamp(160px, 24vw, 220px);
     padding: 20px;
     gap: 16px;
   }
 
   .profile-image-wrapper {
-    max-width: 120px;
+	    max-width: clamp(120px, 55%, 180px);
   }
 
-  .profile-name {
-    font-size: 1.3rem;
-  }
-
-  .profile-title {
-    font-size: 0.9rem;
-  }
+	  /* Name and title already scale via clamp(); no explicit font-size override needed */
 }
 
 /* Responsive Navigation Grid - Mobile */
 @media (max-width: 768px) {
-  .nav-grid-container {
-    /* Mobile: outer (25px) + inner (7px) = 32px */
-    top: 32px;
-    left: 32px;
-    right: 32px;
-    bottom: 32px;
-  }
-
-  /* Stack profile and grid vertically on mobile */
+	/* Stack profile and grid vertically on mobile */
   .nav-content-wrapper {
     flex-direction: column;
     gap: 20px;
@@ -1755,22 +1609,22 @@
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(3, 1fr);
     gap: 20px;
-    max-width: 500px;
-    max-height: none;
   }
 
   /* Profile card becomes horizontal bar at top */
   .profile-card {
-    width: 100%;
-    max-width: 500px;
+	    /* Centered bar that still scales with screen size */
+	    width: clamp(260px, 90vw, 420px);
+	    max-width: 100%;
     min-height: auto;
     flex-direction: row;
-    padding: 16px 24px;
+	    padding: 16px;
     gap: 20px;
+	    align-self: center;
   }
 
   .profile-image-wrapper {
-    max-width: 70px;
+	    max-width: clamp(60px, 18vw, 90px);
     flex-shrink: 0;
   }
 
@@ -1779,24 +1633,16 @@
     text-align: left;
   }
 
-  .profile-name {
-    font-size: 1.2rem;
-  }
-
-  .profile-title {
-    font-size: 0.85rem;
-  }
+	  /* Let profile text continue to scale via clamp() for smooth transitions */
 
   .nav-grid-item {
-    gap: 10px;
-    padding: 16px;
-    border-radius: 10px;
+	    gap: 10px;
+	    padding: 16px;
   }
 
   .nav-icon-wrapper {
-    width: 70px;
-    height: 70px;
-    border-radius: 6px;
+	    /* Keep slightly tighter corners on mobile, but let size be dynamic */
+	    border-radius: 6px;
   }
 
   .nav-icon-title {
@@ -1807,15 +1653,7 @@
 
 /* Responsive Navigation Grid - Small screens */
 @media (max-width: 480px) {
-  .nav-grid-container {
-    /* Small: outer (18px) + inner (5px) = 23px */
-    top: 23px;
-    left: 23px;
-    right: 23px;
-    bottom: 23px;
-  }
-
-  .nav-content-wrapper {
+	.nav-content-wrapper {
     gap: 12px;
   }
 
@@ -1824,7 +1662,7 @@
   }
 
   .profile-card {
-    padding: 12px 16px;
+	    padding: 12px;
     gap: 12px;
     max-width: none;
   }
@@ -1833,24 +1671,16 @@
     max-width: 50px;
   }
 
-  .profile-name {
-    font-size: 1rem;
-  }
-
-  .profile-title {
-    font-size: 0.75rem;
-  }
+	  /* Profile text keeps using clamp() so size changes stay smooth on very small screens */
 
   .nav-grid-item {
-    gap: 8px;
-    padding: 12px;
-    border-radius: 8px;
+	    gap: 8px;
+	    padding: 12px;
   }
 
   .nav-icon-wrapper {
-    width: 55px;
-    height: 55px;
-    border-radius: 4px;
+	    /* Tightest corners on very small screens; size remains dynamic */
+	    border-radius: 4px;
   }
 
   .nav-icon-title {
