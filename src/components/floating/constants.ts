@@ -1,5 +1,5 @@
 // Particle density - particles per 100,000 square pixels of screen area
-export const PARTICLE_DENSITY = 8;
+export const PARTICLE_DENSITY = 10;
 export const SIMULATION_PADDING = 0.3;
 
 // Wandering motion
@@ -10,7 +10,7 @@ export const DAMPING = 0.995;
 
 // Particle repulsion
 export const REPULSION_RADIUS = 60;
-export const REPULSION_STRENGTH = 0.3;
+export const REPULSION_STRENGTH = 1.5;
 
 // Wall repulsion
 export const WALL_MARGIN = 80; // Distance from wall where repulsion starts
@@ -32,5 +32,10 @@ export const CONNECTION_RADIUS = 1.8;
 // Angular distribution connection limits
 export const ANGULAR_SECTORS = 3; 
 export const MAX_PER_SECTOR = 2; 
-export const ANGULAR_PROXIMITY_THRESHOLD = Math.PI / 6; 
+export const ANGULAR_PROXIMITY_THRESHOLD = Math.PI / 6;
+
+// Mouse Forces
+export const MOUSE_ATTRACTION_STRENGTH = 3.5;
+export const MOUSE_ATTRACTION_RADIUS = 250;
+export const MOUSE_ATTRACTION_MIN_RADIUS = 30;
 

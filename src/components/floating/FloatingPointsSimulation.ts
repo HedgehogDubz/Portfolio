@@ -19,6 +19,9 @@ import {
   ANGULAR_SECTORS,
   MAX_PER_SECTOR,
   ANGULAR_PROXIMITY_THRESHOLD,
+  MOUSE_ATTRACTION_STRENGTH,
+  MOUSE_ATTRACTION_RADIUS,
+  MOUSE_ATTRACTION_MIN_RADIUS
 } from './constants';
 
 interface UseFloatingPointsProps {
@@ -40,26 +43,6 @@ interface Triangle {
   p3: Point;
   key: string;
 }
-
-const pointInTriangle = (
-  px: number, py: number,
-  ax: number, ay: number,
-  bx: number, by: number,
-  cx: number, cy: number
-): boolean => {
-  const v0x = cx - ax, v0y = cy - ay;
-  const v1x = bx - ax, v1y = by - ay;
-  const v2x = px - ax, v2y = py - ay;
-  const dot00 = v0x * v0x + v0y * v0y;
-  const dot01 = v0x * v1x + v0y * v1y;
-  const dot02 = v0x * v2x + v0y * v2y;
-  const dot11 = v1x * v1x + v1y * v1y;
-  const dot12 = v1x * v2x + v1y * v2y;
-  const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-  const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-  const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-  return (u >= 0) && (v >= 0) && (u + v <= 1);
-};
 
 export const useFloatingPoints = ({
   canvasRef,
@@ -204,11 +187,12 @@ export const useFloatingPoints = ({
             const fx = (dx / dist) * force;
             const fy = (dy / dist) * force;
 
+            
             // Push particles apart (opposite directions)
-            points[i].vx -= fx;
-            points[i].vy -= fy;
-            points[j].vx += fx;
-            points[j].vy += fy;
+            points[i].x -= fx;
+            points[i].y -= fy;
+            points[j].x += fx;
+            points[j].y += fy;
           }
         }
       }
@@ -258,6 +242,21 @@ export const useFloatingPoints = ({
         if (distFromBottom < WALL_MARGIN) {
           const force = (1 - distFromBottom / WALL_MARGIN) * WALL_REPULSION_STRENGTH;
           point.vy -= force;
+        }
+        // Mouse attraction
+        if (isMouseActiveRef.current && mousePositionRef.current) {
+          const mouseX = mousePositionRef.current.x;
+          const mouseY = mousePositionRef.current.y;
+          const dxMouse = mouseX - point.x;
+          const dyMouse = mouseY - point.y;
+          const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+          if (distMouse < MOUSE_ATTRACTION_RADIUS && distMouse > MOUSE_ATTRACTION_MIN_RADIUS) {
+            const forceMouse = ((-4 * (distMouse - MOUSE_ATTRACTION_MIN_RADIUS) * (distMouse - MOUSE_ATTRACTION_RADIUS)) / (Math.pow(MOUSE_ATTRACTION_RADIUS - MOUSE_ATTRACTION_MIN_RADIUS, 2))) * MOUSE_ATTRACTION_STRENGTH;
+            const fxMouse = (dxMouse / distMouse) * forceMouse;
+            const fyMouse = (dyMouse / distMouse) * forceMouse;
+            point.x += fxMouse;
+            point.y += fyMouse;
+          }
         }
       });
     };
@@ -418,50 +417,15 @@ export const useFloatingPoints = ({
       return triangles;
     };
 
-    const getHoveredTriangle = (triangles: Triangle[]): number => {
-      if (!isMouseActiveRef.current || !mousePositionRef.current) return -1;
-      const mx = mousePositionRef.current.x;
-      const my = mousePositionRef.current.y;
 
-      for (let i = 0; i < triangles.length; i++) {
-        const tri = triangles[i];
-        if (pointInTriangle(mx, my, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, tri.p3.x, tri.p3.y)) {
-          return i;
-        }
-      }
-      return -1;
-    };
-
-    const getNeighborTriangles = (triangles: Triangle[], hoveredIdx: number): Map<number, number> => {
-      const glowMap = new Map<number, number>();
-      if (hoveredIdx < 0) return glowMap;
-
-      glowMap.set(hoveredIdx, 1.0);
-      const hoveredTri = triangles[hoveredIdx];
-      const hoveredPoints = new Set([hoveredTri.p1.id, hoveredTri.p2.id, hoveredTri.p3.id]);
-
-      triangles.forEach((tri, idx) => {
-        if (idx === hoveredIdx) return;
-        const triPoints = [tri.p1.id, tri.p2.id, tri.p3.id];
-        const sharedCount = triPoints.filter(id => hoveredPoints.has(id)).length;
-        if (sharedCount === 2) {
-          glowMap.set(idx, GLOW_FALLOFF);
-        } else if (sharedCount === 1) {
-          glowMap.set(idx, GLOW_FALLOFF * GLOW_FALLOFF);
-        }
-      });
-
-      return glowMap;
-    };
 
     const drawLine = (
       p1: Point, p2: Point, distance: number,
-      color: { r: number; g: number; b: number },
-      glowIntensity: number = 0
+      color: { r: number; g: number; b: number }
     ) => {
       const maxDist = connectionRadiusRef.current;
       const distanceFactor = 1 - (distance / maxDist);
-      const alpha = (BASE_ALPHA + (HOVER_ALPHA - BASE_ALPHA) * glowIntensity) * distanceFactor;
+      const alpha = BASE_ALPHA * distanceFactor;
       const midAlpha = alpha * 0.2;
 
       const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
@@ -473,7 +437,7 @@ export const useFloatingPoints = ({
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.strokeStyle = gradient;
-      ctx.lineWidth = LINE_WIDTH + glowIntensity * 1.5;
+      ctx.lineWidth = LINE_WIDTH;
       ctx.stroke();
     };
 
@@ -486,24 +450,10 @@ export const useFloatingPoints = ({
       const triangles = findTriangles(connections);
       trianglesRef.current = triangles;
 
-      const hoveredIdx = getHoveredTriangle(triangles);
-      const glowMap = getNeighborTriangles(triangles, hoveredIdx);
-
       const drawnEdges = new Set<string>();
 
       triangles.forEach((tri, idx) => {
-        const glowIntensity = glowMap.get(idx) || 0;
         const color = idx % 2 === 0 ? AMBER_COLOR : GREEN_COLOR;
-
-        if (glowIntensity > 0) {
-          ctx.beginPath();
-          ctx.moveTo(tri.p1.x, tri.p1.y);
-          ctx.lineTo(tri.p2.x, tri.p2.y);
-          ctx.lineTo(tri.p3.x, tri.p3.y);
-          ctx.closePath();
-          ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${glowIntensity * 0.08})`;
-          ctx.fill();
-        }
 
         const edges = [
           [tri.p1, tri.p2],
@@ -518,7 +468,7 @@ export const useFloatingPoints = ({
             const dx = pb.x - pa.x;
             const dy = pb.y - pa.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            drawLine(pa, pb, dist, color, glowIntensity);
+            drawLine(pa, pb, dist, color);
           }
         });
       });
@@ -527,7 +477,7 @@ export const useFloatingPoints = ({
         const edgeKey = [conn.p1.id, conn.p2.id].sort((a, b) => a - b).join('-');
         if (!drawnEdges.has(edgeKey)) {
           const color = idx % 2 === 0 ? AMBER_COLOR : GREEN_COLOR;
-          drawLine(conn.p1, conn.p2, conn.distance, color, 0);
+          drawLine(conn.p1, conn.p2, conn.distance, color);
         }
       });
 
