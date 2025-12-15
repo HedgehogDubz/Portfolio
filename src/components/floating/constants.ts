@@ -9,7 +9,7 @@ export const MAX_SPEED = 0.8;
 export const DAMPING = 0.995;
 
 // Particle repulsion
-export const REPULSION_RADIUS = 60;
+export const REPULSION_RADIUS = 100;
 export const REPULSION_STRENGTH = 1.5;
 
 // Wall repulsion
@@ -35,7 +35,15 @@ export const MAX_PER_SECTOR = 2;
 export const ANGULAR_PROXIMITY_THRESHOLD = Math.PI / 6;
 
 // Mouse Forces
-export const MOUSE_ATTRACTION_STRENGTH = 3.5;
-export const MOUSE_ATTRACTION_RADIUS = 250;
-export const MOUSE_ATTRACTION_MIN_RADIUS = 30;
+export const MOUSE_ATTRACTION_STRENGTH = 2.0; //2.0
+export const MOUSE_ATTRACTION_RADIUS = 550;
+export const MOUSE_ATTRACTION_MIN_RADIUS = 0;
 
+// Distortion
+export const DISTORTION_STRENGTH = 5.5; // 5.5
+export const DISTORTION_RADIUS = 150;
+export const DISTORTION_MAX_RADIUS = 100;
+
+// Inter-particle Attractions when moused
+export const MOUSE_INTERACTION_STRENGTH = 0.3;
+export const MOUSE_INTERACTION_RADIUS = 200;

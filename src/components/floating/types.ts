@@ -6,8 +6,10 @@ export interface Point {
   baseY: number;
   vx: number;
   vy: number;
-  wanderAngle: number; // Current wander direction
-  wanderSpeed: number; // Individual wander speed multiplier
+  wanderAngle: number; 
+  wanderSpeed: number; 
+  tx: number;
+  ty: number; 
 }
 
 export interface Triangle {

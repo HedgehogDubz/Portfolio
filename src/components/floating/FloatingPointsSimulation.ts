@@ -21,7 +21,12 @@ import {
   ANGULAR_PROXIMITY_THRESHOLD,
   MOUSE_ATTRACTION_STRENGTH,
   MOUSE_ATTRACTION_RADIUS,
-  MOUSE_ATTRACTION_MIN_RADIUS
+  MOUSE_ATTRACTION_MIN_RADIUS,
+  DISTORTION_STRENGTH,
+  DISTORTION_RADIUS,
+  DISTORTION_MAX_RADIUS,
+  MOUSE_INTERACTION_STRENGTH,
+  MOUSE_INTERACTION_RADIUS,
 } from './constants';
 
 interface UseFloatingPointsProps {
@@ -43,13 +48,13 @@ interface Triangle {
   p3: Point;
   key: string;
 }
-
-export const useFloatingPoints = ({
-  canvasRef,
-  isPausedRef,
-  mousePositionRef,
-  isMouseActiveRef,
-}: UseFloatingPointsProps) => {
+const clamp = (num:number, min:number, max:number) => {
+  if (num < min) return min;
+  if (num > max) return max;
+  return num;
+};
+export const useFloatingPoints = (props: UseFloatingPointsProps) => {
+  const { canvasRef, isPausedRef, mousePositionRef, isMouseActiveRef } = props;
   const pointsRef = useRef<Point[]>([]);
   const trianglesRef = useRef<Triangle[]>([]);
   const animationFrameRef = useRef<number | null>(null);
@@ -97,6 +102,8 @@ export const useFloatingPoints = ({
         vy: Math.sin(angle) * WANDER_SPEED * 0.5,
         wanderAngle: Math.random() * Math.PI * 2,
         wanderSpeed: individualWanderSpeed,
+        tx: 0,
+        ty: 0,
       };
     };
 
@@ -183,16 +190,33 @@ export const useFloatingPoints = ({
 
           if (dist < REPULSION_RADIUS && dist > 0) {
             // Repulsion strength increases as particles get closer
-            const force = (1 - dist / REPULSION_RADIUS) * REPULSION_STRENGTH;
+            const force = clamp(Math.pow(1 - dist / REPULSION_RADIUS, 2) * REPULSION_STRENGTH, 0, 1);
             const fx = (dx / dist) * force;
             const fy = (dy / dist) * force;
-
             
             // Push particles apart (opposite directions)
             points[i].x -= fx;
             points[i].y -= fy;
             points[j].x += fx;
             points[j].y += fy;
+          }
+          //attraction when hovered
+          if (isMouseActiveRef.current && mousePositionRef.current) {
+            const mouseX = mousePositionRef.current.x;
+            const mouseY = mousePositionRef.current.y;
+            const dxMouseI = mouseX - points[i].x;
+            const dyMouseI = mouseY - points[i].y;
+            const dxMouseJ = mouseX - points[j].x;
+            const dyMouseJ = mouseY - points[j].y;
+            const distMouseI = Math.sqrt(dxMouseI * dxMouseI + dyMouseI * dyMouseI);
+            const distMouseJ = Math.sqrt(dxMouseJ * dxMouseJ + dyMouseJ * dyMouseJ);
+            if (distMouseI < MOUSE_INTERACTION_RADIUS && distMouseJ < MOUSE_INTERACTION_RADIUS) {
+              const forceInteraction = MOUSE_INTERACTION_STRENGTH * (1 - distMouseJ / MOUSE_INTERACTION_RADIUS);
+              const fxInteraction = (dx / dist) * forceInteraction;
+              const fyInteraction = (dy / dist) * forceInteraction;
+              points[i].x += fxInteraction;
+              points[i].y += fyInteraction;
+            }
           }
         }
       }
@@ -243,23 +267,45 @@ export const useFloatingPoints = ({
           const force = (1 - distFromBottom / WALL_MARGIN) * WALL_REPULSION_STRENGTH;
           point.vy -= force;
         }
-        // Mouse attraction
         if (isMouseActiveRef.current && mousePositionRef.current) {
           const mouseX = mousePositionRef.current.x;
           const mouseY = mousePositionRef.current.y;
           const dxMouse = mouseX - point.x;
           const dyMouse = mouseY - point.y;
           const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+          // Mouse attraction
+
           if (distMouse < MOUSE_ATTRACTION_RADIUS && distMouse > MOUSE_ATTRACTION_MIN_RADIUS) {
             const forceMouse = ((-4 * (distMouse - MOUSE_ATTRACTION_MIN_RADIUS) * (distMouse - MOUSE_ATTRACTION_RADIUS)) / (Math.pow(MOUSE_ATTRACTION_RADIUS - MOUSE_ATTRACTION_MIN_RADIUS, 2))) * MOUSE_ATTRACTION_STRENGTH;
-            const fxMouse = (dxMouse / distMouse) * forceMouse;
-            const fyMouse = (dyMouse / distMouse) * forceMouse;
+            const fxMouse = (dxMouse / distMouse) * forceMouse * Math.pow(1 - distMouse / MOUSE_ATTRACTION_RADIUS, 1);
+            const fyMouse = (dyMouse / distMouse) * forceMouse * Math.pow(1 - distMouse / MOUSE_ATTRACTION_RADIUS, 1);
             point.x += fxMouse;
             point.y += fyMouse;
           }
+          
+
+          //Distortion
+          const ddxMouse = mouseX - point.x - point.tx;
+          const ddyMouse = mouseY - point.y - point.ty;
+          if (distMouse < DISTORTION_RADIUS) {
+            const forceDistortion = Math.pow(1 - distMouse / DISTORTION_RADIUS, 2) * DISTORTION_STRENGTH;
+            const tfx = (ddxMouse / distMouse) * forceDistortion;
+            const tfy = (ddyMouse / distMouse) * forceDistortion;
+            point.tx += tfx;
+            point.ty += tfy;
+            
+            if (point.tx * point.tx + point.ty * point.ty > DISTORTION_MAX_RADIUS * DISTORTION_MAX_RADIUS) {
+              point.tx = (point.tx / Math.sqrt(point.tx * point.tx + point.ty * point.ty)) * DISTORTION_MAX_RADIUS * Math.pow(1 - distMouse / DISTORTION_RADIUS, 1);
+              point.ty = (point.ty / Math.sqrt(point.tx * point.tx + point.ty * point.ty)) * DISTORTION_MAX_RADIUS * Math.pow(1 - distMouse / DISTORTION_RADIUS, 1);
+            }
+          }
+          point.tx *= 0.9;
+          point.ty *= 0.9;
         }
+        
       });
     };
+
 
     // Helper to get the angular sector (0 to ANGULAR_SECTORS-1) for an angle
     const getAngularSector = (angle: number): number => {
@@ -328,8 +374,8 @@ export const useFloatingPoints = ({
         for (let j = i + 1; j < points.length; j++) {
           const p1 = points[i];
           const p2 = points[j];
-          const dx = p2.x - p1.x;
-          const dy = p2.y - p1.y;
+          const dx = p2.x + p2.tx - p1.x - p1.tx;
+          const dy = p2.y + p2.ty - p1.y - p1.ty;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < maxDist) {
@@ -428,14 +474,14 @@ export const useFloatingPoints = ({
       const alpha = BASE_ALPHA * distanceFactor;
       const midAlpha = alpha * 0.2;
 
-      const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+      const gradient = ctx.createLinearGradient(p1.x + p1.tx, p1.y + p1.ty, p2.x + p2.tx, p2.y + p2.ty);
       gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
       gradient.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${midAlpha})`);
       gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
 
       ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
+      ctx.moveTo(p1.x + p1.tx, p1.y + p1.ty);
+      ctx.lineTo(p2.x + p2.tx, p2.y + p2.ty);
       ctx.strokeStyle = gradient;
       ctx.lineWidth = LINE_WIDTH;
       ctx.stroke();
@@ -484,7 +530,7 @@ export const useFloatingPoints = ({
       points.forEach((point, idx) => {
         const color = idx % 2 === 0 ? AMBER_COLOR : GREEN_COLOR;
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
+        ctx.arc(point.x + point.tx, point.y + point.ty, 2, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`;
         ctx.fill();
       });
