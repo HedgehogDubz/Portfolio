@@ -1551,6 +1551,8 @@
   letter-spacing: 2px;
   text-shadow: 0 0 8px rgba(232, 212, 160, 0.3);
   transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
 .nav-icon-button:hover + .nav-icon-title,
 .nav-icon-button:focus-visible + .nav-icon-title {
   color: rgba(232, 212, 160, 1);
