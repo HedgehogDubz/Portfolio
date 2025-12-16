@@ -1,5 +1,5 @@
 // Particle density - particles per 100,000 square pixels of screen area
-export const PARTICLE_DENSITY = 10;
+export const PARTICLE_DENSITY = 20;
 export const SIMULATION_PADDING = 0.3;
 
 // Wandering motion
